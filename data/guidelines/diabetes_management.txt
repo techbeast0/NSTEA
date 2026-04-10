@@ -1,0 +1,45 @@
+Type 2 Diabetes Mellitus Management Guidelines
+Source: ADA Standards of Care 2024 (summarized)
+
+DIAGNOSIS
+- HbA1c >= 6.5%
+- Fasting plasma glucose >= 126 mg/dL
+- 2-hour plasma glucose >= 200 mg/dL during OGTT
+- Random glucose >= 200 mg/dL with classic symptoms
+
+GLYCEMIC TARGETS
+- General: HbA1c < 7.0%
+- Less stringent (elderly, comorbidities): HbA1c < 8.0%
+- More stringent (young, no complications): HbA1c < 6.5%
+- Fasting glucose: 80-130 mg/dL
+- Postprandial: < 180 mg/dL
+
+FIRST-LINE THERAPY
+- Metformin 500mg once daily, titrate to 1000mg BID over 1-2 months
+- Contraindicated if eGFR < 30 mL/min; reduce dose if eGFR 30-45
+- Hold metformin 48 hours before/after iodinated contrast procedures
+- Side effects: GI (nausea, diarrhea) — take with food; rare lactic acidosis
+
+SECOND-LINE THERAPY (if HbA1c not at goal after 3 months on metformin)
+- SGLT2 inhibitors (empagliflozin, dapagliflozin): preferred if CVD, HF, or CKD
+- GLP-1 receptor agonists (semaglutide, liraglutide): preferred if CVD or obesity
+- DPP-4 inhibitors (sitagliptin, linagliptin): if cost or simplicity is priority
+- Sulfonylureas (glimepiride, glipizide): effective but hypoglycemia risk
+- Insulin: if HbA1c > 10% or symptomatic hyperglycemia at diagnosis
+
+CARDIOVASCULAR RISK MANAGEMENT
+- Statin therapy: moderate-intensity for all T2DM age 40-75; high-intensity if ASCVD
+- Aspirin 75-162mg: secondary prevention (established CVD)
+- BP target: < 130/80 mmHg, ACE/ARB preferred
+- SGLT2 inhibitors reduce heart failure hospitalization and CKD progression
+
+MONITORING
+- HbA1c every 3 months until stable, then every 6 months
+- Annual: lipid panel, urine albumin-to-creatinine ratio, serum creatinine/eGFR
+- Annual dilated eye exam, comprehensive foot exam
+- Self-monitoring blood glucose (SMBG) as needed
+
+HYPOGLYCEMIA MANAGEMENT
+- Glucose < 70 mg/dL: 15-20g fast-acting carbs, recheck in 15 minutes
+- Severe hypoglycemia: glucagon kit; reassess regimen to prevent recurrence
+- Drugs with highest hypoglycemia risk: insulin, sulfonylureas

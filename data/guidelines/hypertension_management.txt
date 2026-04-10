@@ -1,0 +1,43 @@
+Hypertension Management Guidelines
+Source: ACC/AHA 2024 Blood Pressure Guidelines (summarized)
+
+CLASSIFICATION
+- Normal: < 120/80 mmHg
+- Elevated: 120-129 / < 80 mmHg
+- Stage 1 HTN: 130-139 / 80-89 mmHg
+- Stage 2 HTN: >= 140/90 mmHg
+- Hypertensive Crisis: > 180/120 mmHg
+
+FIRST-LINE MEDICATIONS
+- ACE inhibitors: lisinopril, enalapril, ramipril
+- ARBs: losartan, valsartan, irbesartan (alternative if ACE intolerant due to cough)
+- Calcium channel blockers: amlodipine, nifedipine
+- Thiazide diuretics: hydrochlorothiazide, chlorthalidone
+
+COMBINATION THERAPY
+- Preferred: ACE/ARB + CCB or ACE/ARB + thiazide
+- Do NOT combine ACE + ARB (increased renal risk, no added benefit)
+- Triple therapy if needed: ACE/ARB + CCB + thiazide
+
+SPECIAL POPULATIONS
+- Diabetes: ACE/ARB first-line (renal protection). Target < 130/80
+- CKD with proteinuria: ACE/ARB mandatory. Target < 130/80
+- Heart failure (HFrEF): ACE/ARB + beta-blocker + diuretic + MRA
+- Pregnancy: labetalol, nifedipine, or methyldopa. AVOID ACE/ARB (teratogenic)
+- Black patients: CCB or thiazide preferred as initial therapy
+
+HYPERTENSIVE EMERGENCY (> 180/120 with end-organ damage)
+- IV labetalol, nicardipine, or nitroprusside
+- Target: reduce MAP by 25% in first hour
+- Avoid rapid or excessive BP reduction
+
+DRUG INTERACTIONS AND CAUTIONS
+- ACE inhibitors + potassium-sparing diuretics: hyperkalemia risk
+- NSAIDs reduce effectiveness of all antihypertensives
+- ACE inhibitors: monitor creatinine and potassium after initiation
+- Beta-blockers: avoid abrupt discontinuation (rebound hypertension)
+
+MONITORING
+- Recheck BP 1 month after starting/changing therapy
+- Annual labs: basic metabolic panel, lipid panel
+- Home BP monitoring recommended for all patients on therapy

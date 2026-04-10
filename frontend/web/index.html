@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="en" x-data="{dark:localStorage.getItem('nstea-dark')==='true'}" :class="dark?'dark':''" x-init="$watch('dark',v=>localStorage.setItem('nstea-dark',v))">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NS-TEA | Clinical Decision Support</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans:['Inter','system-ui','sans-serif'], mono:['JetBrains Mono','monospace'] },
+          colors: {
+            clinical:{50:'#eff6ff',100:'#dbeafe',200:'#bfdbfe',300:'#93c5fd',400:'#60a5fa',500:'#3b82f6',600:'#2563eb',700:'#1d4ed8',800:'#1e40af',900:'#1e3a8a'},
+            danger:{50:'#fef2f2',100:'#fee2e2',500:'#ef4444',600:'#dc2626',700:'#b91c1c'},
+            warn:{50:'#fffbeb',100:'#fef3c7',500:'#f59e0b',600:'#d97706'},
+            safe:{50:'#f0fdf4',100:'#dcfce7',500:'#22c55e',600:'#16a34a'},
+            neon:{cyan:'#00f5ff',blue:'#4d7cff',purple:'#a855f7',pink:'#ec4899',green:'#00ff88'},
+            surface:{50:'#f8fafc',100:'#f1f5f9',800:'#0f172a',900:'#020617',950:'#010313'}
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    [x-cloak]{display:none!important}
+    body{font-family:'Inter',system-ui,sans-serif;overflow-x:hidden}
+
+    /* 3D Canvas */
+    #bg-canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+
+    /* Animations */
+    .fade-in{animation:fadeIn .4s cubic-bezier(.22,1,.36,1)}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+    .slide-up{animation:slideUp .5s cubic-bezier(.22,1,.36,1)}
+    @keyframes slideUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+    .pulse-dot{animation:pulse 2s ease-in-out infinite}
+    @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.85)}}
+    .spinner{border:3px solid rgba(255,255,255,.15);border-top:3px solid currentColor;border-radius:50%;width:18px;height:18px;animation:spin .7s linear infinite;display:inline-block;vertical-align:middle}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* Neon Glow – dark mode */
+    .dark .neon-border{box-shadow:0 0 0 1px rgba(0,245,255,.12),0 0 20px -5px rgba(0,245,255,.1)}
+    .dark .neon-border:hover{box-shadow:0 0 0 1px rgba(0,245,255,.3),0 0 30px -5px rgba(0,245,255,.2),inset 0 0 20px -10px rgba(0,245,255,.05)}
+    .dark .neon-text{color:#00f5ff;text-shadow:0 0 10px rgba(0,245,255,.4),0 0 40px rgba(0,245,255,.1)}
+    .dark .neon-green{box-shadow:0 0 15px -3px rgba(0,255,136,.3)}
+    .dark .neon-red{box-shadow:0 0 15px -3px rgba(239,68,68,.35)}
+    .dark .neon-warn{box-shadow:0 0 15px -3px rgba(245,158,11,.3)}
+    .dark .neon-btn{background:linear-gradient(135deg,#2563eb,#4d7cff);box-shadow:0 0 25px -3px rgba(77,124,255,.5),0 0 60px -10px rgba(77,124,255,.2)}
+    .dark .neon-btn:hover{box-shadow:0 0 35px -3px rgba(77,124,255,.7),0 0 80px -10px rgba(77,124,255,.3);transform:translateY(-1px)}
+
+    /* Glass morphism */
+    .dark .glass{background:rgba(15,23,42,.6);backdrop-filter:blur(20px) saturate(1.3);border:1px solid rgba(255,255,255,.06)}
+    .glass{background:rgba(255,255,255,.7);backdrop-filter:blur(12px);border:1px solid rgba(0,0,0,.06)}
+
+    /* Card hover lift */
+    .card-hover{transition:all .3s cubic-bezier(.22,1,.36,1)}
+    .card-hover:hover{transform:translateY(-4px)}
+    .dark .card-hover:hover{box-shadow:0 20px 40px -10px rgba(0,0,0,.5),0 0 0 1px rgba(0,245,255,.15)}
+
+    /* Scrollbar */
+    .scrollbar-thin::-webkit-scrollbar{width:5px}
+    .scrollbar-thin::-webkit-scrollbar-track{background:transparent}
+    .scrollbar-thin::-webkit-scrollbar-thumb{background:rgba(148,163,184,.3);border-radius:10px}
+    .dark .scrollbar-thin::-webkit-scrollbar-thumb{background:rgba(100,116,139,.3)}
+
+    /* Input focus glow */
+    .dark input:focus,.dark select:focus,.dark textarea:focus{
+      box-shadow:0 0 0 2px rgba(0,245,255,.2),0 0 15px -3px rgba(0,245,255,.15);
+      border-color:rgba(0,245,255,.4)!important;
+    }
+
+    /* Heartbeat scan line */
+    .heartbeat-line{height:2px;overflow:hidden;position:relative}
+    .heartbeat-line::after{content:'';position:absolute;top:0;left:0;width:40%;height:100%;background:linear-gradient(90deg,transparent,rgba(0,245,255,.6),transparent);animation:hb-scan 3s ease-in-out infinite}
+    @keyframes hb-scan{0%{transform:translateX(-100%)}100%{transform:translateX(350%)}}
+
+    /* DNA pattern overlay for dark */
+    .dark .dna-bg{background-image:repeating-linear-gradient(45deg,transparent,transparent 30px,rgba(0,245,255,.015) 30px,rgba(0,245,255,.015) 31px)}
+
+    /* Tooltip */
+    [data-tip]{position:relative}
+    [data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100%+6px);left:50%;transform:translateX(-50%);padding:4px 10px;font-size:11px;white-space:nowrap;border-radius:6px;z-index:99;animation:fadeIn .2s}
+    .dark [data-tip]:hover::after{background:rgba(0,245,255,.15);color:#00f5ff;border:1px solid rgba(0,245,255,.2)}
+    [data-tip]:hover::after{background:#1e293b;color:#fff}
+
+    /* Medical cross icon pulse */
+    .med-cross{position:relative}
+    .med-cross::before{content:'＋';position:absolute;top:-2px;right:-2px;font-size:8px;color:#00f5ff;opacity:0;animation:crossPulse 4s ease-in-out infinite}
+    .dark .med-cross::before{opacity:1}
+    @keyframes crossPulse{0%,100%{opacity:0;transform:scale(.7)}50%{opacity:1;transform:scale(1)}}
+
+    /* Custom checkbox */
+    input[type="checkbox"]{appearance:none;width:18px;height:18px;border:2px solid #94a3b8;border-radius:5px;cursor:pointer;transition:all .2s;position:relative;flex-shrink:0}
+    input[type="checkbox"]:checked{background:#2563eb;border-color:#2563eb}
+    input[type="checkbox"]:checked::after{content:'✓';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;font-size:11px;font-weight:700}
+    .dark input[type="checkbox"]{border-color:rgba(0,245,255,.3)}
+    .dark input[type="checkbox"]:checked{background:rgba(0,245,255,.2);border-color:#00f5ff}
+    .dark input[type="checkbox"]:checked::after{color:#00f5ff}
+    .dark input[type="checkbox"]:hover{border-color:rgba(0,245,255,.5)}
+  </style>
+</head>
+<body class="bg-surface-50 dark:bg-surface-950 min-h-screen transition-colors duration-300" x-data="nstea()" x-init="init()" x-cloak>
+
+  <!-- 3D Molecular Background Canvas -->
+  <canvas id="bg-canvas"></canvas>
+
+  <!-- ═══════════ NAV ═══════════ -->
+  <nav class="glass sticky top-0 z-50 border-b border-gray-200/50 dark:border-white/5">
+    <!-- Heartbeat scan line -->
+    <div class="heartbeat-line dark:block hidden"></div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6">
+      <div class="flex items-center justify-between h-16">
+        <!-- Logo -->
+        <div class="flex items-center gap-3 group cursor-default">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-clinical-500 to-clinical-700 dark:from-neon-cyan dark:to-neon-blue flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300 med-cross">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"/></svg>
+          </div>
+          <div>
+            <span class="text-lg font-extrabold text-gray-900 dark:text-white tracking-tight">NS-TEA</span>
+            <span class="text-[10px] font-mono ml-1.5 px-1.5 py-0.5 rounded bg-clinical-100 dark:bg-neon-cyan/10 text-clinical-600 dark:text-neon-cyan">v0.5</span>
+          </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="flex items-center gap-0.5 bg-gray-100/80 dark:bg-white/5 rounded-xl p-1">
+          <template x-for="tab in ['dashboard','analyze','results','calculators','system']" :key="tab">
+            <button
+              @click="page=tab"
+              :class="page===tab
+                ? 'bg-white dark:bg-white/10 text-clinical-700 dark:text-neon-cyan font-semibold shadow-sm dark:shadow-none'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-white/50 dark:hover:bg-white/5'"
+              class="px-3.5 py-1.5 rounded-lg text-sm transition-all duration-200"
+              x-text="tab==='analyze'?'New Analysis':tab==='system'?'System':tab.charAt(0).toUpperCase()+tab.slice(1)"
+            ></button>
+          </template>
+        </div>
+
+        <!-- Right controls -->
+        <div class="flex items-center gap-3">
+          <!-- Status dot -->
+          <div class="flex items-center gap-2 text-sm px-3 py-1.5 rounded-full bg-safe-50 dark:bg-safe-500/10 neon-green" x-show="health.status==='ok'">
+            <span class="w-2 h-2 rounded-full bg-safe-500 pulse-dot"></span>
+            <span class="text-safe-700 dark:text-neon-green font-medium text-xs">Online</span>
+          </div>
+          <div class="flex items-center gap-2 text-sm px-3 py-1.5 rounded-full bg-danger-50 dark:bg-danger-500/10 neon-red" x-show="health.status!=='ok'">
+            <span class="w-2 h-2 rounded-full bg-danger-500 pulse-dot"></span>
+            <span class="text-danger-700 dark:text-red-400 font-medium text-xs">Offline</span>
+          </div>
+
+          <!-- Dark mode toggle -->
+          <button @click="dark=!dark" class="w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95"
+            :class="dark ? 'bg-neon-cyan/10 text-neon-cyan hover:bg-neon-cyan/20' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+            data-tip="Toggle Dark Mode">
+            <svg x-show="!dark" class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z"/></svg>
+            <svg x-show="dark" class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ═══════════ MAIN ═══════════ -->
+  <main class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-8">
+
+    <!-- ────────── DASHBOARD ────────── -->
+    <section x-show="page==='dashboard'" x-transition class="fade-in">
+      <!-- Hero -->
+      <div class="mb-8">
+        <h1 class="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+          Dashboard
+          <span class="inline-block w-2 h-2 rounded-full bg-safe-500 ml-2 pulse-dot align-middle"></span>
+        </h1>
+        <p class="text-gray-500 dark:text-gray-400 text-sm mt-1 font-light">Neuro-Symbolic Clinical Decision Support Overview</p>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+        <button @click="page='analyze'" class="card-hover neon-border rounded-2xl p-6 text-left transition-all bg-gradient-to-br from-clinical-500 to-clinical-700 dark:from-clinical-600 dark:to-neon-blue text-white shadow-xl dark:neon-btn group">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 4.5v15m7.5-7.5h-15"/></svg>
+            </div>
+            <span class="font-bold text-lg">New Analysis</span>
+          </div>
+          <p class="text-white/70 text-sm">AI-powered clinical reasoning with safety checks</p>
+        </button>
+
+        <button @click="page='calculators'" class="card-hover neon-border glass rounded-2xl p-6 text-left transition-all group">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-12 h-12 rounded-xl bg-clinical-50 dark:bg-neon-cyan/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <svg class="w-6 h-6 text-clinical-600 dark:text-neon-cyan" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15.75 15.75V18m-7.5-6.75h.008v.008H8.25v-.008Zm0 2.25h.008v.008H8.25v-.008Zm0 2.25h.008v.008H8.25v-.008Zm0 2.25h.008v.008H8.25v-.008ZM21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+            </div>
+            <span class="font-bold text-lg text-gray-900 dark:text-white">Calculators</span>
+          </div>
+          <p class="text-gray-500 dark:text-gray-400 text-sm">eGFR, CHA₂DS₂-VASc, MELD, Wells, CURB-65</p>
+        </button>
+
+        <button @click="page='system'" class="card-hover neon-border glass rounded-2xl p-6 text-left transition-all group">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-12 h-12 rounded-xl bg-clinical-50 dark:bg-neon-purple/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <svg class="w-6 h-6 text-clinical-600 dark:text-neon-purple" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z"/><path d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg>
+            </div>
+            <span class="font-bold text-lg text-gray-900 dark:text-white">System</span>
+          </div>
+          <p class="text-gray-500 dark:text-gray-400 text-sm">Monitor API, feedback metrics, pipeline info</p>
+        </button>
+      </div>
+
+      <!-- Stats -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div class="glass neon-border rounded-2xl p-5 card-hover">
+          <p class="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Analyses</p>
+          <p class="text-3xl font-extrabold text-gray-900 dark:text-white mt-1 neon-text" x-text="analyses.length"></p>
+          <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">this session</p>
+        </div>
+        <div class="glass neon-border rounded-2xl p-5 card-hover">
+          <p class="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Feedback</p>
+          <p class="text-3xl font-extrabold text-gray-900 dark:text-white mt-1 neon-text" x-text="feedbackSummary.total || 0"></p>
+          <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">total submitted</p>
+        </div>
+        <div class="glass neon-border rounded-2xl p-5 card-hover">
+          <p class="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Accept Rate</p>
+          <p class="text-3xl font-extrabold text-safe-600 dark:text-neon-green mt-1" x-text="feedbackSummary.accept_rate || '—'"></p>
+          <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">of reviewed</p>
+        </div>
+        <div class="glass neon-border rounded-2xl p-5 card-hover">
+          <p class="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">API</p>
+          <p class="text-3xl font-extrabold mt-1" :class="health.status==='ok'?'text-safe-600 dark:text-neon-green':'text-danger-600'" x-text="health.status==='ok'?'Live':'Down'"></p>
+          <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 font-mono" x-text="'v'+health.version"></p>
+        </div>
+      </div>
+
+      <!-- Recent Analyses -->
+      <div class="glass neon-border rounded-2xl overflow-hidden">
+        <div class="p-5 border-b border-gray-200/50 dark:border-white/5 flex items-center justify-between">
+          <h2 class="font-bold text-gray-900 dark:text-white">Recent Analyses</h2>
+          <span class="text-xs font-mono text-gray-400 dark:text-gray-500" x-text="analyses.length + ' total'"></span>
+        </div>
+        <div x-show="analyses.length===0" class="p-12 text-center">
+          <div class="w-16 h-16 rounded-2xl bg-clinical-50 dark:bg-neon-cyan/5 flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-clinical-300 dark:text-neon-cyan/30" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/></svg>
+          </div>
+          <p class="text-gray-400 dark:text-gray-500 text-sm">No analyses yet</p>
+          <button @click="page='analyze'" class="mt-3 text-clinical-600 dark:text-neon-cyan hover:underline text-sm font-medium">Start your first analysis →</button>
+        </div>
+        <div class="divide-y divide-gray-100 dark:divide-white/5">
+          <template x-for="(a,i) in analyses" :key="i">
+            <div class="p-4 hover:bg-gray-50 dark:hover:bg-white/3 cursor-pointer flex items-center justify-between transition-all duration-200 group" @click="currentResult=a; page='results'">
+              <div class="flex items-center gap-4">
+                <div class="w-11 h-11 rounded-xl bg-clinical-50 dark:bg-neon-cyan/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <svg class="w-5 h-5 text-clinical-600 dark:text-neon-cyan" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0"/></svg>
+                </div>
+                <div>
+                  <p class="font-semibold text-gray-900 dark:text-white" x-text="a.patient_id"></p>
+                  <p class="text-sm text-gray-500 dark:text-gray-400" x-text="a.diagnosis?.primary?.substring(0,55)+(a.diagnosis?.primary?.length>55?'...':'')"></p>
+                </div>
+              </div>
+              <div class="flex items-center gap-4">
+                <div class="text-right">
+                  <p class="text-sm font-bold" :class="a.confidence?.overall>=0.7?'text-safe-600 dark:text-neon-green':a.confidence?.overall>=0.5?'text-warn-600':'text-danger-600'" x-text="Math.round((a.confidence?.overall||0)*100)+'%'"></p>
+                  <p class="text-[10px] text-gray-400 uppercase tracking-wider">confidence</p>
+                </div>
+                <span class="px-2.5 py-1 rounded-full text-xs font-bold" :class="a.requires_human_review?'bg-warn-100 text-warn-700 dark:bg-warn-500/15 dark:text-warn-500 neon-warn':'bg-safe-100 text-safe-700 dark:bg-safe-500/15 dark:text-neon-green neon-green'" x-text="a.requires_human_review?'Review':'Clear'"></span>
+                <svg class="w-4 h-4 text-gray-300 dark:text-gray-600 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m8.25 4.5 7.5 7.5-7.5 7.5"/></svg>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+    </section>
+
+    <!-- ────────── NEW ANALYSIS ────────── -->
+    <section x-show="page==='analyze'" x-transition class="fade-in">
+      <div class="mb-6">
+        <h1 class="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">New Clinical Analysis</h1>
+        <p class="text-gray-500 dark:text-gray-400 text-sm mt-1 font-light">Enter patient data for AI-powered clinical reasoning</p>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 space-y-5">
+
+          <!-- Demographics -->
+          <div class="glass neon-border rounded-2xl p-5 dna-bg">
+            <h3 class="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <span class="w-8 h-8 rounded-lg bg-clinical-50 dark:bg-neon-cyan/10 flex items-center justify-center">
+                <svg class="w-4 h-4 text-clinical-600 dark:text-neon-cyan" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0"/></svg>
+              </span>
+              Patient Information
+            </h3>
+            <div class="grid grid-cols-3 gap-4">
+              <div>
+                <label class="block text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Patient ID</label>
+                <input x-model="form.patient_id" type="text" class="w-full border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-clinical-500 dark:focus:ring-neon-cyan/30 outline-none transition-all" placeholder="P-12345"/>
+              </div>
+              <div>
+                <label class="block text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Age</label>
+                <input x-model.number="form.age" type="number" min="0" max="150" class="w-full border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-clinical-500 outline-none transition-all"/>
+              </div>
+              <div>
+                <label class="block text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Sex</label>
+                <select x-model="form.sex" class="w-full border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-clinical-500 outline-none transition-all">
+                  <option value="male">Male</option><option value="female">Female</option><option value="other">Other</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dynamic List Sections -->
+          <template x-for="sec in [
+            {key:'conditions', label:'Active Conditions', icon:'M11.35 3.836c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15a2.25 2.25 0 0 1 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m8.9-4.414c.376.023.75.05 1.124.08 1.131.094 1.976 1.057 1.976 2.192V16.5A2.25 2.25 0 0 1 18 18.75h-2.25m-7.5-10.5H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V18.75m-7.5-10.5h6.375c.621 0 1.125.504 1.125 1.125v9.375m-8.25-3 1.5 1.5 3-3.75',
+              add:{name:'',icd10_code:'',status:'active'}, cols:['name|Condition|1','icd10_code|ICD-10|w-24','status|Status|w-24']},
+            {key:'medications', label:'Current Medications', icon:'M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0 1 12 15a9.065 9.065 0 0 0-6.23.693L5 14.5m14.8.8 1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0 1 12 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5',
+              add:{name:'',dosage:''}, cols:['name|Drug name|1','dosage|Dosage|w-44']},
+            {key:'allergies', label:'Allergies', icon:'M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z',
+              add:{substance:'',reaction:'',severity:'moderate'}, cols:['substance|Substance|1','reaction|Reaction|w-32','severity|Severity|w-28']},
+            {key:'symptoms', label:'Presenting Symptoms', icon:'M15.362 5.214A8.252 8.252 0 0 1 12 21 8.25 8.25 0 0 1 6.038 7.047 8.287 8.287 0 0 0 9 9.601a8.983 8.983 0 0 1 3.361-6.867 8.21 8.21 0 0 0 3 2.48Z',
+              add:{description:'',severity:'moderate'}, cols:['description|Description|1','severity|Severity|w-28']}
+          ]" :key="sec.key">
+            <div class="glass neon-border rounded-2xl p-5">
+              <div class="flex items-center justify-between mb-3">
+                <h3 class="font-bold text-gray-900 dark:text-white text-sm flex items-center gap-2">
+                  <span class="w-7 h-7 rounded-lg bg-clinical-50 dark:bg-neon-cyan/10 flex items-center justify-center">
+                    <svg class="w-3.5 h-3.5 text-clinical-600 dark:text-neon-cyan" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path :d="sec.icon"/></svg>
+                  </span>
+                  <span x-text="sec.label"></span>
+                  <span class="text-xs font-normal text-gray-400 dark:text-gray-500 font-mono" x-text="'('+form[sec.key].length+')'"></span>
+                </h3>
+                <button @click="form[sec.key].push(JSON.parse(JSON.stringify(sec.add)))" class="text-clinical-600 dark:text-neon-cyan hover:text-clinical-700 text-sm font-semibold flex items-center gap-1 hover:gap-2 transition-all">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 4.5v15m7.5-7.5h-15"/></svg>Add
+                </button>
+              </div>
+              <template x-for="(item,i) in form[sec.key]" :key="i">
+                <div class="flex gap-2 mb-2.5 items-center slide-up">
+                  <template x-for="col in sec.cols" :key="col">
+                    <template x-if="col.split('|')[0]==='status'">
+                      <select x-model="item[col.split('|')[0]]" :class="col.split('|')[2]" class="border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white rounded-xl px-2 py-2 text-sm focus:ring-2 focus:ring-clinical-500 outline-none transition-all">
+                        <option value="active">Active</option><option value="chronic">Chronic</option><option value="resolved">Resolved</option>
+                      </select>
+                    </template>
+                    <template x-if="col.split('|')[0]==='severity'">
+                      <select x-model="item[col.split('|')[0]]" :class="col.split('|')[2]" class="border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white rounded-xl px-2 py-2 text-sm focus:ring-2 focus:ring-clinical-500 outline-none transition-all">
+                        <option value="mild">Mild</option><option value="moderate">Moderate</option><option value="severe">Severe</option>
+                      </select>
+                    </template>
+                    <template x-if="col.split('|')[0]!=='status'&&col.split('|')[0]!=='severity'">
+                      <input x-model="item[col.split('|')[0]]" type="text" :placeholder="col.split('|')[1]" :class="col.split('|')[2]==='1'?'flex-1':col.split('|')[2]" class="border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-clinical-500 outline-none transition-all"/>
+                    </template>
+                  </template>
+                  <button @click="form[sec.key].splice(i,1)" class="text-gray-300 dark:text-gray-600 hover:text-danger-500 dark:hover:text-red-400 p-1.5 hover:bg-danger-50 dark:hover:bg-red-500/10 rounded-lg transition-all hover:scale-110">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 18 18 6M6 6l12 12"/></svg>
+                  </button>
+                </div>
+              </template>
+              <p x-show="form[sec.key].length===0" class="text-sm text-gray-400 dark:text-gray-500 italic py-1">None added yet</p>
+            </div>
+          </template>
+
+          <!-- Lab Results -->
+          <div class="glass neon-border rounded-2xl p-5">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="font-bold text-gray-900 dark:text-white text-sm flex items-center gap-2">
+                <span class="w-7 h-7 rounded-lg bg-clinical-50 dark:bg-neon-cyan/10 flex items-center justify-center">
+                  <svg class="w-3.5 h-3.5 text-clinical-600 dark:text-neon-cyan" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3"/></svg>
+                </span>
+                Lab Results
+                <span class="text-xs font-normal text-gray-400 dark:text-gray-500 font-mono" x-text="'('+form.lab_results.length+')'"></span>
+              </h3>
+              <button @click="form.lab_results.push({test_name:'',value:0,unit:'',date:today(),reference_range:'',is_abnormal:false})" class="text-clinical-600 dark:text-neon-cyan hover:text-clinical-700 text-sm font-semibold flex items-center gap-1 hover:gap-2 transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 4.5v15m7.5-7.5h-15"/></svg>Add
+              </button>
+            </div>
+            <template x-for="(l,i) in form.lab_results" :key="i">
+              <div class="flex gap-2 mb-2.5 items-center flex-wrap slide-up">
+                <input x-model="l.test_name" type="text" placeholder="Test name" class="flex-1 min-w-[120px] border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white rounded-xl px-3 py-2 text-sm outline-none transition-all focus:ring-2 focus:ring-clinical-500"/>
+                <input x-model.number="l.value" type="number" step="any" placeholder="Value" class="w-20 border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white rounded-xl px-3 py-2 text-sm outline-none transition-all focus:ring-2 focus:ring-clinical-500"/>
+                <input x-model="l.unit" type="text" placeholder="Unit" class="w-20 border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white rounded-xl px-3 py-2 text-sm outline-none transition-all focus:ring-2 focus:ring-clinical-500"/>
+                <input x-model="l.date" type="date" class="w-36 border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white rounded-xl px-3 py-2 text-sm outline-none transition-all focus:ring-2 focus:ring-clinical-500"/>
+                <label class="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400 cursor-pointer"><input x-model="l.is_abnormal" type="checkbox"/> Abnormal</label>
+                <button @click="form.lab_results.splice(i,1)" class="text-gray-300 dark:text-gray-600 hover:text-danger-500 dark:hover:text-red-400 p-1.5 hover:bg-danger-50 dark:hover:bg-red-500/10 rounded-lg transition-all hover:scale-110">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 18 18 6M6 6l12 12"/></svg>
+                </button>
+              </div>
+            </template>
+            <p x-show="form.lab_results.length===0" class="text-sm text-gray-400 dark:text-gray-500 italic py-1">No labs added</p>
+          </div>
+
+          <!-- Vitals -->
+          <div class="glass neon-border rounded-2xl p-5">
+            <h3 class="font-bold text-gray-900 dark:text-white text-sm mb-4 flex items-center gap-2">
+              <span class="w-7 h-7 rounded-lg bg-clinical-50 dark:bg-neon-cyan/10 flex items-center justify-center">
+                <svg class="w-3.5 h-3.5 text-clinical-600 dark:text-neon-cyan" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"/></svg>
+              </span>
+              Vitals
+            </h3>
+            <div class="grid grid-cols-3 md:grid-cols-6 gap-3">
+              <template x-for="v in [{k:'heart_rate',l:'HR',u:'bpm'},{k:'blood_pressure_systolic',l:'SBP',u:'mmHg'},{k:'blood_pressure_diastolic',l:'DBP',u:'mmHg'},{k:'temperature',l:'Temp',u:'°C'},{k:'respiratory_rate',l:'RR',u:'/min'},{k:'spo2',l:'SpO₂',u:'%'}]" :key="v.k">
+                <div>
+                  <label class="block text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1" x-text="v.l"></label>
+                  <input x-model.number="form.vitals[v.k]" type="number" step="any" :placeholder="v.u" class="w-full border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white rounded-xl px-2.5 py-2 text-sm focus:ring-2 focus:ring-clinical-500 outline-none transition-all"/>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <!-- History Timeline -->
+          <div class="glass neon-border rounded-2xl p-5">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="font-bold text-gray-900 dark:text-white text-sm flex items-center gap-2">
+                <span class="w-7 h-7 rounded-lg bg-clinical-50 dark:bg-neon-cyan/10 flex items-center justify-center">
+                  <svg class="w-3.5 h-3.5 text-clinical-600 dark:text-neon-cyan" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+                </span>
+                Clinical History
+              </h3>
+              <button @click="form.history.push({event_type:'diagnosis',description:'',date:today()})" class="text-clinical-600 dark:text-neon-cyan hover:text-clinical-700 text-sm font-semibold flex items-center gap-1 hover:gap-2 transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 4.5v15m7.5-7.5h-15"/></svg>Add
+              </button>
+            </div>
+            <template x-for="(h,i) in form.history" :key="i">
+              <div class="flex gap-2 mb-2.5 items-center slide-up">
+                <select x-model="h.event_type" class="w-28 border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white rounded-xl px-2 py-2 text-sm outline-none transition-all focus:ring-2 focus:ring-clinical-500">
+                  <option value="diagnosis">Diagnosis</option><option value="medication">Medication</option><option value="procedure">Procedure</option><option value="lab">Lab</option><option value="visit">Visit</option><option value="imaging">Imaging</option>
+                </select>
+                <input x-model="h.description" type="text" placeholder="Description" class="flex-1 border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white rounded-xl px-3 py-2 text-sm outline-none transition-all focus:ring-2 focus:ring-clinical-500"/>
+                <input x-model="h.date" type="date" class="w-36 border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white rounded-xl px-3 py-2 text-sm outline-none transition-all focus:ring-2 focus:ring-clinical-500"/>
+                <button @click="form.history.splice(i,1)" class="text-gray-300 dark:text-gray-600 hover:text-danger-500 dark:hover:text-red-400 p-1.5 hover:bg-danger-50 dark:hover:bg-red-500/10 rounded-lg transition-all hover:scale-110">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 18 18 6M6 6l12 12"/></svg>
+                </button>
+              </div>
+            </template>
+            <p x-show="form.history.length===0" class="text-sm text-gray-400 dark:text-gray-500 italic py-1">No history events added</p>
+          </div>
+
+          <!-- Clinical Question -->
+          <div class="glass neon-border rounded-2xl p-5">
+            <h3 class="font-bold text-gray-900 dark:text-white text-sm mb-3 flex items-center gap-2">
+              <span class="w-7 h-7 rounded-lg bg-clinical-50 dark:bg-neon-cyan/10 flex items-center justify-center">
+                <svg class="w-3.5 h-3.5 text-clinical-600 dark:text-neon-cyan" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.076-4.076a1.526 1.526 0 0 1 1.037-.443 48.282 48.282 0 0 0 5.68-.494c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z"/></svg>
+              </span>
+              Clinical Question
+            </h3>
+            <textarea x-model="form.clinician_query" rows="3" class="w-full border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-clinical-500 outline-none resize-none transition-all" placeholder="What is the likely diagnosis and recommended treatment plan for this patient?"></textarea>
+          </div>
+
+          <!-- Submit Button -->
+          <button
+            @click="runAnalysis()"
+            :disabled="analyzing"
+            class="w-full bg-gradient-to-r from-clinical-500 to-clinical-700 dark:from-clinical-600 dark:to-neon-blue hover:from-clinical-600 hover:to-clinical-800 disabled:from-gray-400 disabled:to-gray-500 text-white font-bold py-4 px-6 rounded-2xl shadow-xl transition-all duration-300 flex items-center justify-center gap-3 text-base neon-btn active:scale-[.98]"
+          >
+            <span x-show="analyzing" class="spinner text-white"></span>
+            <svg x-show="!analyzing" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg>
+            <span x-text="analyzing ? 'Analyzing patient data...' : 'Run Clinical Analysis'"></span>
+          </button>
+          <p x-show="analyzeError" class="text-danger-600 text-sm mt-3 glass neon-red p-4 rounded-xl font-medium" x-text="analyzeError"></p>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="space-y-5">
+          <div class="glass neon-border rounded-2xl p-5 sticky top-24">
+            <h3 class="font-bold text-gray-900 dark:text-white text-sm mb-4">Quick-Fill Templates</h3>
+            <div class="space-y-2">
+              <template x-for="t in [{n:'cardiac',l:'🫀 Cardiac (MI suspected)',c:'border-red-200 dark:border-red-500/20 hover:bg-red-50 dark:hover:bg-red-500/5'},{n:'diabetes',l:'💉 Diabetes + HTN',c:'border-blue-200 dark:border-blue-500/20 hover:bg-blue-50 dark:hover:bg-blue-500/5'},{n:'respiratory',l:'🫁 Respiratory (COPD)',c:'border-green-200 dark:border-green-500/20 hover:bg-green-50 dark:hover:bg-green-500/5'},{n:'safety',l:'⚠️ Safety Edge Case',c:'border-warn-200 dark:border-warn-500/20 hover:bg-warn-50 dark:hover:bg-warn-500/5'}]" :key="t.n">
+                <button @click="loadTemplate(t.n)" class="w-full text-left px-4 py-3 rounded-xl text-sm text-gray-700 dark:text-gray-300 border transition-all duration-200 hover:scale-[1.02] active:scale-[.98]" :class="t.c" x-text="t.l"></button>
+              </template>
+            </div>
+            <hr class="my-4 border-gray-200 dark:border-white/5"/>
+            <h3 class="font-bold text-gray-900 dark:text-white text-sm mb-3">Actions</h3>
+            <button @click="resetForm()" class="w-full text-left px-4 py-2.5 rounded-xl text-sm hover:bg-gray-100 dark:hover:bg-white/5 text-gray-600 dark:text-gray-400 transition-all">🗑️ Clear Form</button>
+            <button @click="importJSON()" class="w-full text-left px-4 py-2.5 rounded-xl text-sm hover:bg-gray-100 dark:hover:bg-white/5 text-gray-600 dark:text-gray-400 mt-1 transition-all">📋 Import JSON</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ────────── RESULTS ────────── -->
+    <section x-show="page==='results'" x-transition class="fade-in">
+      <template x-if="currentResult">
+        <div>
+          <div class="flex items-center justify-between mb-6">
+            <div>
+              <h1 class="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">Analysis Results</h1>
+              <p class="text-gray-500 dark:text-gray-400 text-sm mt-1 font-light">
+                Patient: <span class="font-semibold text-gray-700 dark:text-gray-200" x-text="currentResult.patient_id"></span>
+                &middot; <span class="font-mono text-xs text-gray-400 dark:text-gray-500" x-text="currentResult.analysis_id"></span>
+              </p>
+            </div>
+            <button @click="page='analyze'" class="text-sm text-clinical-600 dark:text-neon-cyan hover:underline font-medium flex items-center gap-1">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"/></svg>New Analysis
+            </button>
+          </div>
+
+          <!-- Critical Safety Banner -->
+          <template x-if="currentResult.safety_flags?.filter(f=>f.level==='critical').length>0">
+            <div class="glass neon-red rounded-2xl p-5 mb-6 border-l-4 border-danger-500 dark:border-red-500 slide-up">
+              <div class="flex items-center gap-2 mb-2">
+                <svg class="w-6 h-6 text-danger-600 dark:text-red-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"/></svg>
+                <span class="font-extrabold text-danger-700 dark:text-red-300 text-sm uppercase tracking-wider">Critical Safety Alerts</span>
+              </div>
+              <template x-for="f in currentResult.safety_flags.filter(f=>f.level==='critical')" :key="f.message">
+                <p class="text-sm text-danger-700 dark:text-red-300 ml-8 py-0.5" x-text="f.message"></p>
+              </template>
+            </div>
+          </template>
+
+          <!-- Warning Banner -->
+          <template x-if="currentResult.safety_flags?.filter(f=>f.level==='warning').length>0">
+            <div class="glass neon-warn rounded-2xl p-4 mb-6 border-l-4 border-warn-500 slide-up">
+              <template x-for="f in currentResult.safety_flags.filter(f=>f.level==='warning')" :key="f.message">
+                <p class="text-sm text-warn-700 dark:text-warn-500" x-text="'⚠️ '+f.message"></p>
+              </template>
+            </div>
+          </template>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 space-y-6">
+
+              <!-- Diagnosis -->
+              <div class="glass neon-border rounded-2xl p-6">
+                <h3 class="font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2">
+                  <span class="w-8 h-8 rounded-lg bg-clinical-50 dark:bg-neon-cyan/10 flex items-center justify-center">
+                    <svg class="w-4 h-4 text-clinical-600 dark:text-neon-cyan" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg>
+                  </span>
+                  Diagnosis
+                </h3>
+                <p class="text-xl font-extrabold text-gray-900 dark:text-white mb-5 neon-text" x-text="currentResult.diagnosis?.primary||'N/A'"></p>
+                <template x-if="currentResult.diagnosis?.differential?.length>0">
+                  <div>
+                    <p class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4">Differential Diagnosis</p>
+                    <template x-for="dx in currentResult.diagnosis.differential" :key="dx.diagnosis">
+                      <div class="mb-4">
+                        <div class="flex items-center justify-between mb-1.5">
+                          <span class="text-sm font-semibold text-gray-800 dark:text-gray-200" x-text="dx.diagnosis"></span>
+                          <span class="text-sm font-bold font-mono" :class="dx.probability>=0.5?'text-clinical-600 dark:text-neon-cyan':'text-gray-400'" x-text="Math.round(dx.probability*100)+'%'"></span>
+                        </div>
+                        <div class="w-full bg-gray-100 dark:bg-white/5 rounded-full h-2.5 overflow-hidden">
+                          <div class="h-full rounded-full transition-all duration-700 ease-out" :class="dx.probability>=0.5?'bg-gradient-to-r from-clinical-400 to-clinical-600 dark:from-neon-cyan dark:to-neon-blue':'bg-gray-300 dark:bg-gray-600'" :style="'width:'+Math.round(dx.probability*100)+'%'"></div>
+                        </div>
+                        <template x-if="dx.supporting_evidence?.length">
+                          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1.5"><span class="text-safe-500">▸</span> <span x-text="dx.supporting_evidence.join('; ')"></span></p>
+                        </template>
+                        <template x-if="dx.contradicting_evidence?.length">
+                          <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5"><span class="text-danger-500">▾</span> <span x-text="dx.contradicting_evidence.join('; ')"></span></p>
+                        </template>
+                      </div>
+                    </template>
+                  </div>
+                </template>
+              </div>
+
+              <!-- Recommendations -->
+              <div class="glass neon-border rounded-2xl p-6">
+                <h3 class="font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2">
+                  <span class="w-8 h-8 rounded-lg bg-clinical-50 dark:bg-neon-cyan/10 flex items-center justify-center">
+                    <svg class="w-4 h-4 text-clinical-600 dark:text-neon-cyan" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08"/></svg>
+                  </span>
+                  Recommendations
+                  <span class="text-xs font-mono font-normal text-gray-400 dark:text-gray-500" x-text="'('+((currentResult.recommendations||[]).length)+')'"></span>
+                </h3>
+                <div class="space-y-3">
+                  <template x-for="(rec,i) in currentResult.recommendations||[]" :key="i">
+                    <div class="rounded-xl p-4 border transition-all card-hover" :class="rec.urgency==='stat'?'border-danger-200 dark:border-red-500/20 bg-danger-50/50 dark:bg-red-500/5 neon-red':rec.urgency==='urgent'?'border-warn-200 dark:border-warn-500/20 bg-warn-50/50 dark:bg-warn-500/5 neon-warn':'border-gray-200 dark:border-white/5 bg-white/50 dark:bg-white/2'">
+                      <div class="flex items-start gap-3">
+                        <span class="px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wider mt-0.5 flex-shrink-0"
+                          :class="rec.urgency==='stat'?'bg-danger-100 text-danger-700 dark:bg-red-500/15 dark:text-red-400':rec.urgency==='urgent'?'bg-warn-100 text-warn-700 dark:bg-warn-500/15 dark:text-warn-500':'bg-gray-100 text-gray-600 dark:bg-white/5 dark:text-gray-400'"
+                          x-text="rec.urgency"></span>
+                        <div class="flex-1">
+                          <p class="font-semibold text-gray-900 dark:text-white" x-text="rec.action"></p>
+                          <p class="text-sm text-gray-600 dark:text-gray-400 mt-1" x-text="rec.rationale"></p>
+                          <div class="flex items-center gap-3 mt-2.5 flex-wrap">
+                            <span class="text-xs px-2 py-0.5 bg-clinical-50 dark:bg-neon-cyan/10 text-clinical-600 dark:text-neon-cyan rounded-lg font-medium" x-text="rec.category"></span>
+                            <span x-show="rec.guideline_source" class="text-xs text-gray-400 dark:text-gray-500 font-mono" x-text="'📄 '+rec.guideline_source"></span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </template>
+                  <p x-show="!currentResult.recommendations?.length" class="text-gray-400 dark:text-gray-500 text-sm italic text-center py-4">No recommendations generated</p>
+                </div>
+              </div>
+
+              <!-- Reasoning Trace -->
+              <div class="glass neon-border rounded-2xl p-6">
+                <h3 class="font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2">
+                  <span class="w-8 h-8 rounded-lg bg-clinical-50 dark:bg-neon-purple/10 flex items-center justify-center">
+                    <svg class="w-4 h-4 text-clinical-600 dark:text-neon-purple" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/></svg>
+                  </span>
+                  Reasoning Trace
+                </h3>
+                <div class="space-y-2">
+                  <template x-for="step in currentResult.reasoning_steps||[]" :key="step.step_number">
+                    <details class="group rounded-xl border border-gray-200 dark:border-white/5 transition-all hover:border-clinical-200 dark:hover:border-neon-cyan/20">
+                      <summary class="cursor-pointer px-4 py-3 flex items-center gap-3 select-none">
+                        <span class="w-7 h-7 rounded-lg bg-gradient-to-br from-clinical-100 to-clinical-200 dark:from-neon-cyan/10 dark:to-neon-blue/10 text-clinical-700 dark:text-neon-cyan text-xs font-extrabold flex items-center justify-center flex-shrink-0" x-text="step.step_number"></span>
+                        <span class="text-sm font-medium text-gray-800 dark:text-gray-200 group-open:text-clinical-600 dark:group-open:text-neon-cyan transition-colors" x-text="step.description"></span>
+                        <svg class="w-4 h-4 text-gray-400 ml-auto transition-transform group-open:rotate-90" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m8.25 4.5 7.5 7.5-7.5 7.5"/></svg>
+                      </summary>
+                      <div class="px-4 pb-4 ml-10 text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                        <p><span class="font-semibold text-gray-700 dark:text-gray-300">Input:</span> <span x-text="step.input_summary"></span></p>
+                        <p><span class="font-semibold text-gray-700 dark:text-gray-300">Output:</span> <span x-text="step.output_summary"></span></p>
+                      </div>
+                    </details>
+                  </template>
+                </div>
+              </div>
+
+              <!-- Info flags / Guideline Alignment -->
+              <template x-if="currentResult.safety_flags?.filter(f=>f.level==='info').length>0">
+                <div class="glass neon-border rounded-2xl p-5 border-l-4 border-clinical-400 dark:border-neon-cyan">
+                  <p class="text-sm font-bold text-clinical-700 dark:text-neon-cyan mb-2">ℹ️ Guideline Alignment</p>
+                  <template x-for="f in currentResult.safety_flags.filter(f=>f.level==='info')" :key="f.message">
+                    <p class="text-sm text-clinical-600 dark:text-gray-300 py-0.5" x-text="f.message"></p>
+                  </template>
+                </div>
+              </template>
+            </div>
+
+            <!-- Right column -->
+            <div class="space-y-6">
+              <!-- Confidence Ring -->
+              <div class="glass neon-border rounded-2xl p-6">
+                <h3 class="font-bold text-gray-900 dark:text-white mb-5">Confidence</h3>
+                <div class="text-center mb-5">
+                  <div class="inline-flex items-center justify-center w-28 h-28 rounded-full border-[5px] transition-colors" :class="currentResult.confidence?.overall>=0.7?'border-safe-500 dark:border-neon-green neon-green':currentResult.confidence?.overall>=0.5?'border-warn-500 neon-warn':'border-danger-500 neon-red'">
+                    <span class="text-3xl font-extrabold" :class="currentResult.confidence?.overall>=0.7?'text-safe-600 dark:text-neon-green':currentResult.confidence?.overall>=0.5?'text-warn-600':'text-danger-600'" x-text="Math.round((currentResult.confidence?.overall||0)*100)+'%'"></span>
+                  </div>
+                  <p class="text-xs text-gray-400 dark:text-gray-500 mt-3 uppercase tracking-wider font-semibold">Overall Confidence</p>
+                </div>
+                <div class="space-y-4">
+                  <template x-for="m in [{k:'evidence_strength',l:'Evidence Strength'},{k:'model_certainty',l:'Model Certainty'}]" :key="m.k">
+                    <div>
+                      <div class="flex justify-between text-xs mb-1.5">
+                        <span class="text-gray-600 dark:text-gray-400 font-medium" x-text="m.l"></span>
+                        <span class="font-bold font-mono text-gray-800 dark:text-gray-200" x-text="Math.round((currentResult.confidence?.[m.k]||0)*100)+'%'"></span>
+                      </div>
+                      <div class="w-full bg-gray-100 dark:bg-white/5 rounded-full h-2 overflow-hidden">
+                        <div class="bg-gradient-to-r from-clinical-400 to-clinical-600 dark:from-neon-cyan dark:to-neon-blue rounded-full h-2 transition-all duration-700" :style="'width:'+Math.round((currentResult.confidence?.[m.k]||0)*100)+'%'"></div>
+                      </div>
+                    </div>
+                  </template>
+                </div>
+                <div class="mt-5 p-3 rounded-xl text-sm text-center font-bold" :class="currentResult.requires_human_review?'bg-warn-50 dark:bg-warn-500/10 text-warn-700 dark:text-warn-500 neon-warn':'bg-safe-50 dark:bg-safe-500/10 text-safe-700 dark:text-neon-green neon-green'" x-text="currentResult.requires_human_review?'⚠️ Human Review Required':'✅ Automated Clearance'"></div>
+                <p x-show="currentResult.escalation_reason" class="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center" x-text="currentResult.escalation_reason"></p>
+              </div>
+
+              <!-- Feedback -->
+              <div class="glass neon-border rounded-2xl p-6" x-data="{verdict:'',notes:'',modDx:'',submitted:false,submitting:false}">
+                <h3 class="font-bold text-gray-900 dark:text-white mb-5">Your Decision</h3>
+                <template x-if="!submitted">
+                  <div>
+                    <div class="grid grid-cols-3 gap-2 mb-4">
+                      <template x-for="v in [{k:'accept',e:'✅',l:'Accept',c:'ring-safe-500 bg-safe-50 dark:bg-safe-500/10 neon-green'},{k:'modify',e:'✏️',l:'Modify',c:'ring-warn-500 bg-warn-50 dark:bg-warn-500/10 neon-warn'},{k:'reject',e:'❌',l:'Reject',c:'ring-danger-500 bg-danger-50 dark:bg-red-500/10 neon-red'}]" :key="v.k">
+                        <button @click="verdict=v.k" :class="verdict===v.k?'ring-2 '+v.c:'border border-gray-200 dark:border-white/10'" class="p-3.5 rounded-xl text-center transition-all duration-200 hover:scale-105 active:scale-95">
+                          <span class="text-xl block" x-text="v.e"></span>
+                          <p class="text-xs font-bold mt-1 text-gray-700 dark:text-gray-300" x-text="v.l"></p>
+                        </button>
+                      </template>
+                    </div>
+                    <template x-if="verdict==='modify'||verdict==='reject'">
+                      <div class="space-y-3 slide-up">
+                        <div>
+                          <label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Correct Diagnosis</label>
+                          <input x-model="modDx" type="text" class="w-full border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white rounded-xl px-3 py-2 text-sm outline-none transition-all focus:ring-2 focus:ring-clinical-500"/>
+                        </div>
+                        <div>
+                          <label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Notes</label>
+                          <textarea x-model="notes" rows="2" class="w-full border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white rounded-xl px-3 py-2 text-sm outline-none resize-none transition-all focus:ring-2 focus:ring-clinical-500"></textarea>
+                        </div>
+                      </div>
+                    </template>
+                    <button x-show="verdict"
+                      @click="submitting=true; submitFeedback(currentResult.analysis_id,verdict,notes,modDx).then(()=>{submitted=true}).finally(()=>{submitting=false})"
+                      :disabled="submitting"
+                      class="w-full mt-4 bg-gradient-to-r from-clinical-500 to-clinical-700 dark:from-clinical-600 dark:to-neon-blue text-white font-bold py-2.5 px-4 rounded-xl text-sm transition-all neon-btn active:scale-[.98]">
+                      <span x-show="submitting" class="spinner mr-2"></span>Submit Feedback
+                    </button>
+                  </div>
+                </template>
+                <template x-if="submitted">
+                  <div class="text-center py-6 slide-up">
+                    <div class="w-14 h-14 rounded-2xl bg-safe-50 dark:bg-safe-500/10 flex items-center justify-center mx-auto mb-3 neon-green">
+                      <svg class="w-7 h-7 text-safe-500 dark:text-neon-green" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="m4.5 12.75 6 6 9-13.5"/></svg>
+                    </div>
+                    <p class="font-bold text-safe-600 dark:text-neon-green">Feedback Submitted</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Thank you for your review</p>
+                  </div>
+                </template>
+              </div>
+
+              <!-- Raw Output -->
+              <details class="glass neon-border rounded-2xl overflow-hidden">
+                <summary class="p-4 cursor-pointer text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 flex items-center gap-2 transition-colors">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17.25 6.75 22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3-4.5 16.5"/></svg>
+                  Raw LLM Output
+                </summary>
+                <div class="px-4 pb-4">
+                  <pre class="text-xs font-mono bg-gray-50 dark:bg-black/30 p-4 rounded-xl overflow-auto max-h-64 scrollbar-thin text-gray-700 dark:text-gray-300" x-text="currentResult.raw_llm_output||'N/A'"></pre>
+                </div>
+              </details>
+            </div>
+          </div>
+        </div>
+      </template>
+      <template x-if="!currentResult">
+        <div class="text-center py-24">
+          <div class="w-20 h-20 rounded-3xl bg-clinical-50 dark:bg-neon-cyan/5 flex items-center justify-center mx-auto mb-5">
+            <svg class="w-10 h-10 text-clinical-200 dark:text-neon-cyan/20" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/></svg>
+          </div>
+          <p class="text-gray-400 dark:text-gray-500 text-lg font-light">No results yet</p>
+          <button @click="page='analyze'" class="mt-4 text-clinical-600 dark:text-neon-cyan hover:underline font-medium">Start an analysis →</button>
+        </div>
+      </template>
+    </section>
+
+    <!-- ────────── CALCULATORS ────────── -->
+    <section x-show="page==='calculators'" x-transition class="fade-in">
+      <div class="mb-6">
+        <h1 class="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">Clinical Calculators</h1>
+        <p class="text-gray-500 dark:text-gray-400 text-sm mt-1 font-light">Standard scoring tools for clinical assessment</p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <!-- eGFR -->
+        <div class="glass neon-border rounded-2xl p-5 card-hover" x-data="{cr:1.0,age:65,sex:'male',result:null,loading:false}">
+          <h3 class="font-bold text-gray-900 dark:text-white mb-0.5">eGFR <span class="font-normal text-xs text-gray-400">(CKD-EPI 2021)</span></h3>
+          <p class="text-xs text-gray-400 dark:text-gray-500 mb-4">Estimated Glomerular Filtration Rate</p>
+          <div class="space-y-3">
+            <div><label class="block text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Creatinine (mg/dL)</label><input x-model.number="cr" type="number" step="0.1" class="w-full border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white rounded-xl px-3 py-2 text-sm outline-none transition-all focus:ring-2 focus:ring-clinical-500"/></div>
+            <div class="grid grid-cols-2 gap-3">
+              <div><label class="block text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Age</label><input x-model.number="age" type="number" class="w-full border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white rounded-xl px-3 py-2 text-sm outline-none transition-all focus:ring-2 focus:ring-clinical-500"/></div>
+              <div><label class="block text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Sex</label><select x-model="sex" class="w-full border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white rounded-xl px-2 py-2 text-sm outline-none transition-all focus:ring-2 focus:ring-clinical-500"><option value="male">Male</option><option value="female">Female</option></select></div>
+            </div>
+            <button @click="loading=true;calcAPI('egfr',{creatinine:cr,age,sex}).then(r=>result=r).finally(()=>loading=false)" :disabled="loading" class="w-full bg-gradient-to-r from-clinical-500 to-clinical-600 dark:from-clinical-600 dark:to-neon-blue text-white text-sm font-bold py-2.5 rounded-xl transition-all neon-btn active:scale-[.98] disabled:opacity-50">
+              <span x-show="loading" class="spinner mr-1"></span>Calculate
+            </button>
+          </div>
+          <template x-if="result">
+            <div class="mt-4 p-4 rounded-xl bg-gray-50 dark:bg-white/5 neon-border slide-up">
+              <p class="text-2xl font-extrabold text-clinical-700 dark:text-neon-cyan neon-text" x-text="Math.round(result.score)+' mL/min/1.73m²'"></p>
+              <p class="text-sm text-gray-600 dark:text-gray-400 mt-1" x-text="result.interpretation"></p>
+            </div>
+          </template>
+        </div>
+
+        <!-- CHA2DS2-VASc -->
+        <div class="glass neon-border rounded-2xl p-5 card-hover" x-data="{age:72,sex:'male',chf:false,htn:true,stroke:false,vasc:false,dm:false,result:null,loading:false}">
+          <h3 class="font-bold text-gray-900 dark:text-white mb-0.5">CHA₂DS₂-VASc</h3>
+          <p class="text-xs text-gray-400 dark:text-gray-500 mb-4">Stroke Risk in Atrial Fibrillation</p>
+          <div class="space-y-3">
+            <div class="grid grid-cols-2 gap-3">
+              <div><label class="block text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Age</label><input x-model.number="age" type="number" class="w-full border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white rounded-xl px-3 py-2 text-sm outline-none transition-all focus:ring-2 focus:ring-clinical-500"/></div>
+              <div><label class="block text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Sex</label><select x-model="sex" class="w-full border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white rounded-xl px-2 py-2 text-sm outline-none transition-all focus:ring-2 focus:ring-clinical-500"><option value="male">Male</option><option value="female">Female</option></select></div>
+            </div>
+            <div class="space-y-2">
+              <label class="flex items-center gap-2.5 text-sm text-gray-700 dark:text-gray-300 cursor-pointer"><input x-model="chf" type="checkbox"/>Heart Failure</label>
+              <label class="flex items-center gap-2.5 text-sm text-gray-700 dark:text-gray-300 cursor-pointer"><input x-model="htn" type="checkbox"/>Hypertension</label>
+              <label class="flex items-center gap-2.5 text-sm text-gray-700 dark:text-gray-300 cursor-pointer"><input x-model="stroke" type="checkbox"/>Stroke / TIA</label>
+              <label class="flex items-center gap-2.5 text-sm text-gray-700 dark:text-gray-300 cursor-pointer"><input x-model="vasc" type="checkbox"/>Vascular Disease</label>
+              <label class="flex items-center gap-2.5 text-sm text-gray-700 dark:text-gray-300 cursor-pointer"><input x-model="dm" type="checkbox"/>Diabetes</label>
+            </div>
+            <button @click="loading=true;calcAPI('cha2ds2vasc',{age,sex,has_chf:chf,has_hypertension:htn,has_stroke_tia:stroke,has_vascular_disease:vasc,has_diabetes:dm}).then(r=>result=r).finally(()=>loading=false)" :disabled="loading" class="w-full bg-gradient-to-r from-clinical-500 to-clinical-600 dark:from-clinical-600 dark:to-neon-blue text-white text-sm font-bold py-2.5 rounded-xl transition-all neon-btn active:scale-[.98] disabled:opacity-50">
+              <span x-show="loading" class="spinner mr-1"></span>Calculate
+            </button>
+          </div>
+          <template x-if="result">
+            <div class="mt-4 p-4 rounded-xl bg-gray-50 dark:bg-white/5 neon-border slide-up">
+              <p class="text-2xl font-extrabold text-clinical-700 dark:text-neon-cyan neon-text" x-text="'Score: '+result.score"></p>
+              <p class="text-sm text-gray-600 dark:text-gray-400 mt-1" x-text="result.interpretation"></p>
+            </div>
+          </template>
+        </div>
+
+        <!-- MELD-Na -->
+        <div class="glass neon-border rounded-2xl p-5 card-hover" x-data="{bili:1.2,inr:1.5,cr:1.0,na:137,dialysis:false,result:null,loading:false}">
+          <h3 class="font-bold text-gray-900 dark:text-white mb-0.5">MELD-Na</h3>
+          <p class="text-xs text-gray-400 dark:text-gray-500 mb-4">Model for End-Stage Liver Disease</p>
+          <div class="space-y-3">
+            <div class="grid grid-cols-2 gap-3">
+              <div><label class="block text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Bilirubin</label><input x-model.number="bili" type="number" step="0.1" class="w-full border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white rounded-xl px-3 py-2 text-sm outline-none transition-all focus:ring-2 focus:ring-clinical-500"/></div>
+              <div><label class="block text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">INR</label><input x-model.number="inr" type="number" step="0.1" class="w-full border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white rounded-xl px-3 py-2 text-sm outline-none transition-all focus:ring-2 focus:ring-clinical-500"/></div>
+              <div><label class="block text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Creatinine</label><input x-model.number="cr" type="number" step="0.1" class="w-full border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white rounded-xl px-3 py-2 text-sm outline-none transition-all focus:ring-2 focus:ring-clinical-500"/></div>
+              <div><label class="block text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Sodium</label><input x-model.number="na" type="number" class="w-full border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white rounded-xl px-3 py-2 text-sm outline-none transition-all focus:ring-2 focus:ring-clinical-500"/></div>
+            </div>
+            <label class="flex items-center gap-2.5 text-sm text-gray-700 dark:text-gray-300 cursor-pointer"><input x-model="dialysis" type="checkbox"/>On Dialysis</label>
+            <button @click="loading=true;calcAPI('meld',{bilirubin:bili,inr,creatinine:cr,sodium:na,on_dialysis:dialysis}).then(r=>result=r).finally(()=>loading=false)" :disabled="loading" class="w-full bg-gradient-to-r from-clinical-500 to-clinical-600 dark:from-clinical-600 dark:to-neon-blue text-white text-sm font-bold py-2.5 rounded-xl transition-all neon-btn active:scale-[.98] disabled:opacity-50">
+              <span x-show="loading" class="spinner mr-1"></span>Calculate
+            </button>
+          </div>
+          <template x-if="result">
+            <div class="mt-4 p-4 rounded-xl bg-gray-50 dark:bg-white/5 neon-border slide-up">
+              <p class="text-2xl font-extrabold text-clinical-700 dark:text-neon-cyan neon-text" x-text="'Score: '+result.score"></p>
+              <p class="text-sm text-gray-600 dark:text-gray-400 mt-1" x-text="result.interpretation"></p>
+            </div>
+          </template>
+        </div>
+
+        <!-- Wells DVT -->
+        <div class="glass neon-border rounded-2xl p-5 card-hover" x-data="{cancer:false,paralysis:false,bed:false,tender:false,legSwollen:false,calf:false,edema:false,collateral:false,prevDvt:false,altDx:false,result:null,loading:false}">
+          <h3 class="font-bold text-gray-900 dark:text-white mb-0.5">Wells Score <span class="font-normal text-xs text-gray-400">(DVT)</span></h3>
+          <p class="text-xs text-gray-400 dark:text-gray-500 mb-4">Deep Vein Thrombosis Probability</p>
+          <div class="space-y-2 mb-4">
+            <label class="flex items-center gap-2.5 text-sm text-gray-700 dark:text-gray-300 cursor-pointer"><input x-model="cancer" type="checkbox"/>Active cancer</label>
+            <label class="flex items-center gap-2.5 text-sm text-gray-700 dark:text-gray-300 cursor-pointer"><input x-model="paralysis" type="checkbox"/>Paralysis or plaster cast</label>
+            <label class="flex items-center gap-2.5 text-sm text-gray-700 dark:text-gray-300 cursor-pointer"><input x-model="bed" type="checkbox"/>Bedridden &gt;3 days / surgery</label>
+            <label class="flex items-center gap-2.5 text-sm text-gray-700 dark:text-gray-300 cursor-pointer"><input x-model="tender" type="checkbox"/>Tenderness along deep veins</label>
+            <label class="flex items-center gap-2.5 text-sm text-gray-700 dark:text-gray-300 cursor-pointer"><input x-model="legSwollen" type="checkbox"/>Entire leg swollen</label>
+            <label class="flex items-center gap-2.5 text-sm text-gray-700 dark:text-gray-300 cursor-pointer"><input x-model="calf" type="checkbox"/>Calf swelling &gt;3cm</label>
+            <label class="flex items-center gap-2.5 text-sm text-gray-700 dark:text-gray-300 cursor-pointer"><input x-model="edema" type="checkbox"/>Pitting edema</label>
+            <label class="flex items-center gap-2.5 text-sm text-gray-700 dark:text-gray-300 cursor-pointer"><input x-model="collateral" type="checkbox"/>Collateral superficial veins</label>
+            <label class="flex items-center gap-2.5 text-sm text-gray-700 dark:text-gray-300 cursor-pointer"><input x-model="prevDvt" type="checkbox"/>Previous DVT</label>
+            <label class="flex items-center gap-2.5 text-sm text-warn-700 dark:text-warn-500 cursor-pointer"><input x-model="altDx" type="checkbox"/>Alternative diagnosis likely (-2)</label>
+          </div>
+          <button @click="loading=true;calcAPI('wells',{active_cancer:cancer,paralysis_or_cast:paralysis,bedridden_3_days:bed,tenderness_along_veins:tender,entire_leg_swollen:legSwollen,calf_swelling_gt_3cm:calf,pitting_edema:edema,collateral_veins:collateral,previous_dvt:prevDvt,alternative_diagnosis_likely:altDx}).then(r=>result=r).finally(()=>loading=false)" :disabled="loading" class="w-full bg-gradient-to-r from-clinical-500 to-clinical-600 dark:from-clinical-600 dark:to-neon-blue text-white text-sm font-bold py-2.5 rounded-xl transition-all neon-btn active:scale-[.98] disabled:opacity-50">
+            <span x-show="loading" class="spinner mr-1"></span>Calculate
+          </button>
+          <template x-if="result">
+            <div class="mt-4 p-4 rounded-xl bg-gray-50 dark:bg-white/5 neon-border slide-up">
+              <p class="text-2xl font-extrabold text-clinical-700 dark:text-neon-cyan neon-text" x-text="'Score: '+result.score"></p>
+              <p class="text-sm text-gray-600 dark:text-gray-400 mt-1" x-text="result.interpretation"></p>
+            </div>
+          </template>
+        </div>
+
+        <!-- CURB-65 -->
+        <div class="glass neon-border rounded-2xl p-5 card-hover" x-data="{confusion:false,bun:false,rr:false,sbp:false,dbp:false,age65:false,result:null,loading:false}">
+          <h3 class="font-bold text-gray-900 dark:text-white mb-0.5">CURB-65</h3>
+          <p class="text-xs text-gray-400 dark:text-gray-500 mb-4">Pneumonia Severity Assessment</p>
+          <div class="space-y-2 mb-4">
+            <label class="flex items-center gap-2.5 text-sm text-gray-700 dark:text-gray-300 cursor-pointer"><input x-model="confusion" type="checkbox"/>Confusion (new onset)</label>
+            <label class="flex items-center gap-2.5 text-sm text-gray-700 dark:text-gray-300 cursor-pointer"><input x-model="bun" type="checkbox"/>BUN &gt;19 mg/dL</label>
+            <label class="flex items-center gap-2.5 text-sm text-gray-700 dark:text-gray-300 cursor-pointer"><input x-model="rr" type="checkbox"/>Respiratory rate ≥30</label>
+            <label class="flex items-center gap-2.5 text-sm text-gray-700 dark:text-gray-300 cursor-pointer"><input x-model="sbp" type="checkbox"/>Systolic BP &lt;90 mmHg</label>
+            <label class="flex items-center gap-2.5 text-sm text-gray-700 dark:text-gray-300 cursor-pointer"><input x-model="dbp" type="checkbox"/>Diastolic BP ≤60 mmHg</label>
+            <label class="flex items-center gap-2.5 text-sm text-gray-700 dark:text-gray-300 cursor-pointer"><input x-model="age65" type="checkbox"/>Age ≥65</label>
+          </div>
+          <button @click="loading=true;calcAPI('curb65',{confusion,bun_gt_19:bun,respiratory_rate_ge_30:rr,systolic_bp_lt_90:sbp,diastolic_bp_le_60:dbp,age_ge_65:age65}).then(r=>result=r).finally(()=>loading=false)" :disabled="loading" class="w-full bg-gradient-to-r from-clinical-500 to-clinical-600 dark:from-clinical-600 dark:to-neon-blue text-white text-sm font-bold py-2.5 rounded-xl transition-all neon-btn active:scale-[.98] disabled:opacity-50">
+            <span x-show="loading" class="spinner mr-1"></span>Calculate
+          </button>
+          <template x-if="result">
+            <div class="mt-4 p-4 rounded-xl bg-gray-50 dark:bg-white/5 neon-border slide-up">
+              <p class="text-2xl font-extrabold text-clinical-700 dark:text-neon-cyan neon-text" x-text="'Score: '+result.score+'/5'"></p>
+              <p class="text-sm text-gray-600 dark:text-gray-400 mt-1" x-text="result.interpretation"></p>
+            </div>
+          </template>
+        </div>
+      </div>
+    </section>
+
+    <!-- ────────── SYSTEM HEALTH ────────── -->
+    <section x-show="page==='system'" x-transition class="fade-in">
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h1 class="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">System Health</h1>
+          <p class="text-gray-500 dark:text-gray-400 text-sm mt-1 font-light">Monitor API status, feedback metrics, pipeline architecture</p>
+        </div>
+        <button @click="refreshHealth()" class="text-sm glass neon-border px-4 py-2 rounded-xl text-gray-600 dark:text-gray-300 hover:scale-105 active:scale-95 transition-all font-medium">🔄 Refresh</button>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <!-- API Status -->
+        <div class="glass neon-border rounded-2xl p-6">
+          <h3 class="font-bold text-gray-900 dark:text-white mb-5">API Status</h3>
+          <div class="space-y-4">
+            <div class="flex items-center justify-between">
+              <span class="text-sm text-gray-600 dark:text-gray-400">Backend API</span>
+              <div class="flex items-center gap-2.5 px-3 py-1 rounded-full" :class="health.status==='ok'?'bg-safe-50 dark:bg-safe-500/10 neon-green':'bg-danger-50 dark:bg-red-500/10 neon-red'">
+                <span class="w-2.5 h-2.5 rounded-full pulse-dot" :class="health.status==='ok'?'bg-safe-500':'bg-danger-500'"></span>
+                <span class="text-sm font-bold" :class="health.status==='ok'?'text-safe-600 dark:text-neon-green':'text-danger-600'" x-text="health.status==='ok'?'Online':'Offline'"></span>
+              </div>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-sm text-gray-600 dark:text-gray-400">Version</span>
+              <span class="text-sm font-mono font-bold text-gray-800 dark:text-gray-200" x-text="health.version||'—'"></span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-sm text-gray-600 dark:text-gray-400">Phase</span>
+              <span class="text-sm font-bold text-clinical-600 dark:text-neon-cyan" x-text="'Phase '+(health.phase||'?')"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Feedback Summary -->
+        <div class="glass neon-border rounded-2xl p-6">
+          <h3 class="font-bold text-gray-900 dark:text-white mb-5">Feedback Summary</h3>
+          <template x-if="feedbackSummary.total>0">
+            <div>
+              <div class="grid grid-cols-3 gap-3 mb-5">
+                <div class="bg-safe-50 dark:bg-safe-500/10 rounded-xl p-3 text-center neon-green card-hover">
+                  <p class="text-xl font-extrabold text-safe-600 dark:text-neon-green" x-text="feedbackSummary.accepted||0"></p>
+                  <p class="text-[10px] font-bold text-safe-700 dark:text-safe-500 uppercase tracking-wider">Accepted</p>
+                </div>
+                <div class="bg-warn-50 dark:bg-warn-500/10 rounded-xl p-3 text-center neon-warn card-hover">
+                  <p class="text-xl font-extrabold text-warn-600 dark:text-warn-500" x-text="feedbackSummary.modified||0"></p>
+                  <p class="text-[10px] font-bold text-warn-700 dark:text-warn-500 uppercase tracking-wider">Modified</p>
+                </div>
+                <div class="bg-danger-50 dark:bg-red-500/10 rounded-xl p-3 text-center neon-red card-hover">
+                  <p class="text-xl font-extrabold text-danger-600 dark:text-red-400" x-text="feedbackSummary.rejected||0"></p>
+                  <p class="text-[10px] font-bold text-danger-700 dark:text-red-400 uppercase tracking-wider">Rejected</p>
+                </div>
+              </div>
+              <canvas id="feedbackChart" width="300" height="200"></canvas>
+            </div>
+          </template>
+          <template x-if="!feedbackSummary.total">
+            <p class="text-gray-400 dark:text-gray-500 text-sm italic text-center py-8">No feedback submitted yet</p>
+          </template>
+        </div>
+
+        <!-- Knowledge Graph -->
+        <div class="glass neon-border rounded-2xl p-6">
+          <h3 class="font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2">
+            <span class="w-7 h-7 rounded-lg bg-neon-purple/10 flex items-center justify-center">
+              <svg class="w-3.5 h-3.5 text-neon-purple" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z"/></svg>
+            </span>
+            Knowledge Graph
+          </h3>
+          <div class="space-y-3">
+            <template x-for="s in [{l:'Drugs',v:'30 nodes',c:'neon-cyan'},{l:'Conditions',v:'13 nodes',c:'neon-blue'},{l:'Allergies',v:'5 nodes',c:'neon-pink'},{l:'Guidelines',v:'5 nodes',c:'neon-green'}]" :key="s.l">
+              <div class="flex justify-between text-sm">
+                <span class="text-gray-600 dark:text-gray-400" x-text="s.l"></span>
+                <span class="font-bold font-mono text-gray-800 dark:text-gray-200" x-text="s.v"></span>
+              </div>
+            </template>
+            <hr class="border-gray-200 dark:border-white/5"/>
+            <template x-for="s in [{l:'Drug Interactions',v:'9 edges'},{l:'Contraindications',v:'11 edges'},{l:'Cross-Reactivities',v:'6 edges'}]" :key="s.l">
+              <div class="flex justify-between text-sm">
+                <span class="text-gray-600 dark:text-gray-400" x-text="s.l"></span>
+                <span class="font-bold font-mono text-gray-800 dark:text-gray-200" x-text="s.v"></span>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <!-- Pipeline -->
+        <div class="glass neon-border rounded-2xl p-6 dna-bg">
+          <h3 class="font-bold text-gray-900 dark:text-white mb-5">Pipeline Architecture</h3>
+          <div class="space-y-4 text-sm">
+            <template x-for="(step,i) in [
+              {t:'RAG + Temporal',d:'Guideline retrieval + patient history graph (parallel)'},
+              {t:'Safety Pre-Check',d:'Rule engine + constraint engine on current meds'},
+              {t:'LLM Reasoning',d:'6-step structured clinical reasoning with retry + timeout'},
+              {t:'Safety Post-Check',d:'Rule engine + symbolic constraints on recommendations'},
+              {t:'Confidence Gate',d:'Multi-dimensional scoring + HITL escalation'}
+            ]" :key="i">
+              <div class="flex gap-3 items-start group">
+                <span class="w-8 h-8 rounded-xl bg-gradient-to-br from-clinical-100 to-clinical-200 dark:from-neon-cyan/10 dark:to-neon-blue/10 text-clinical-700 dark:text-neon-cyan text-xs font-extrabold flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform" x-text="i+1"></span>
+                <div>
+                  <p class="font-semibold text-gray-800 dark:text-gray-200 group-hover:text-clinical-600 dark:group-hover:text-neon-cyan transition-colors" x-text="step.t"></p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400" x-text="step.d"></p>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="relative z-10 border-t border-gray-200/50 dark:border-white/5 mt-16 py-8 text-center">
+    <p class="text-xs text-gray-400 dark:text-gray-500">NS-TEA v0.5 &middot; Neuro-Symbolic Temporal EHR Agent &middot; For research and educational use only</p>
+    <div class="flex items-center justify-center gap-4 mt-3">
+      <span class="text-[10px] font-mono text-gray-300 dark:text-gray-600">Phase 5</span>
+      <span class="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600"></span>
+      <span class="text-[10px] font-mono text-gray-300 dark:text-gray-600">104 tests passing</span>
+      <span class="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600"></span>
+      <span class="text-[10px] font-mono text-gray-300 dark:text-gray-600">FastAPI + Alpine.js</span>
+    </div>
+  </footer>
+
+  <!-- JSON Import Modal -->
+  <div x-show="showImportModal" x-transition class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 backdrop-blur-sm" @click.self="showImportModal=false">
+    <div class="glass rounded-2xl shadow-2xl max-w-xl w-full mx-4 p-6 neon-border slide-up">
+      <h3 class="font-bold text-gray-900 dark:text-white mb-3">Import Patient JSON</h3>
+      <textarea x-model="importText" rows="12" class="w-full border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white rounded-xl px-4 py-3 text-sm font-mono focus:ring-2 focus:ring-clinical-500 outline-none resize-none" placeholder="Paste patient JSON here..."></textarea>
+      <p x-show="importError" class="text-danger-600 text-sm mt-2" x-text="importError"></p>
+      <div class="flex justify-end gap-3 mt-4">
+        <button @click="showImportModal=false" class="px-5 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl transition-all">Cancel</button>
+        <button @click="doImport()" class="px-5 py-2 text-sm bg-gradient-to-r from-clinical-500 to-clinical-600 text-white rounded-xl font-bold transition-all neon-btn">Import</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3D Background Script — Floating Molecular Grid -->
+  <script>
+  (function(){
+    const c=document.getElementById('bg-canvas');
+    if(!c)return;
+    const ctx=c.getContext('2d');
+    let W,H,particles=[],mouse={x:null,y:null};
+
+    function resize(){W=c.width=window.innerWidth;H=c.height=window.innerHeight}
+    window.addEventListener('resize',resize);
+    resize();
+
+    // Create molecular nodes
+    const COUNT=80;
+    for(let i=0;i<COUNT;i++){
+      particles.push({
+        x:Math.random()*W, y:Math.random()*H,
+        vx:(Math.random()-.5)*.3, vy:(Math.random()-.5)*.3,
+        r:Math.random()*2+1,
+        type:Math.random()>.7?'node':'small'
+      });
+    }
+
+    document.addEventListener('mousemove',e=>{mouse.x=e.clientX;mouse.y=e.clientY});
+    document.addEventListener('mouseleave',()=>{mouse.x=null;mouse.y=null});
+
+    function isDark(){return document.documentElement.classList.contains('dark')}
+
+    function draw(){
+      ctx.clearRect(0,0,W,H);
+      const dark=isDark();
+
+      // Update positions
+      for(const p of particles){
+        p.x+=p.vx; p.y+=p.vy;
+        if(p.x<0||p.x>W)p.vx*=-1;
+        if(p.y<0||p.y>H)p.vy*=-1;
+
+        // Mouse repulsion
+        if(mouse.x!==null){
+          const dx=p.x-mouse.x, dy=p.y-mouse.y;
+          const dist=Math.sqrt(dx*dx+dy*dy);
+          if(dist<150){
+            const force=(150-dist)/150*.5;
+            p.vx+=dx/dist*force*.1;
+            p.vy+=dy/dist*force*.1;
+          }
+        }
+        // Damping
+        p.vx*=.999; p.vy*=.999;
+      }
+
+      // Draw connections
+      for(let i=0;i<particles.length;i++){
+        for(let j=i+1;j<particles.length;j++){
+          const dx=particles[i].x-particles[j].x;
+          const dy=particles[i].y-particles[j].y;
+          const dist=Math.sqrt(dx*dx+dy*dy);
+          if(dist<120){
+            const alpha=(1-dist/120)*(dark?.12:.04);
+            ctx.strokeStyle=dark?`rgba(0,245,255,${alpha})`:`rgba(59,130,246,${alpha})`;
+            ctx.lineWidth=dark?1:.5;
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x,particles[i].y);
+            ctx.lineTo(particles[j].x,particles[j].y);
+            ctx.stroke();
+          }
+        }
+      }
+
+      // Draw particles
+      for(const p of particles){
+        if(p.type==='node'){
+          ctx.beginPath();
+          ctx.arc(p.x,p.y,p.r*1.8,0,Math.PI*2);
+          ctx.fillStyle=dark?'rgba(0,245,255,.25)':'rgba(59,130,246,.12)';
+          ctx.fill();
+          if(dark){
+            ctx.beginPath();
+            ctx.arc(p.x,p.y,p.r*3.5,0,Math.PI*2);
+            ctx.fillStyle='rgba(0,245,255,.04)';
+            ctx.fill();
+          }
+        }else{
+          ctx.beginPath();
+          ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+          ctx.fillStyle=dark?'rgba(0,245,255,.15)':'rgba(59,130,246,.06)';
+          ctx.fill();
+        }
+      }
+
+      requestAnimationFrame(draw);
+    }
+    draw();
+  })();
+  </script>
+
+  <script src="/app.js"></script>
+</body>
+</html>

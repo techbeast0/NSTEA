@@ -1,0 +1,91 @@
+# NS-TEA Drug-Drug Interaction Rules
+# Each rule identifies a dangerous combination of medications.
+
+interactions:
+  - id: WARFARIN_NSAID
+    description: "Warfarin + NSAID — dramatically increased bleeding risk"
+    severity: critical
+    drug_a: ["warfarin", "coumadin"]
+    drug_b: ["ibuprofen", "naproxen", "diclofenac", "indomethacin", "ketorolac", "meloxicam", "celecoxib", "piroxicam", "aspirin"]
+    effect: "Increased risk of GI and intracranial hemorrhage"
+    recommendation: "Use acetaminophen for pain. If antiplatelet needed, use with PPI gastroprotection and close INR monitoring."
+
+  - id: WARFARIN_ANTIBIOTICS
+    description: "Warfarin + certain antibiotics — altered INR"
+    severity: warning
+    drug_a: ["warfarin", "coumadin"]
+    drug_b: ["metronidazole", "fluconazole", "trimethoprim-sulfamethoxazole", "bactrim", "ciprofloxacin", "levofloxacin", "azithromycin", "clarithromycin", "erythromycin"]
+    effect: "Increased anticoagulant effect — risk of supratherapeutic INR and bleeding"
+    recommendation: "Monitor INR closely (within 3-5 days). Consider dose reduction. Avoid if alternative antibiotic available."
+
+  - id: ACE_POTASSIUM
+    description: "ACE inhibitor/ARB + potassium-sparing diuretic — hyperkalemia risk"
+    severity: warning
+    drug_a: ["lisinopril", "enalapril", "ramipril", "benazepril", "captopril", "losartan", "valsartan", "irbesartan", "candesartan"]
+    drug_b: ["spironolactone", "eplerenone", "amiloride", "triamterene"]
+    effect: "Risk of life-threatening hyperkalemia"
+    recommendation: "Monitor serum potassium within 1 week. Avoid combination if K+ > 5.0 mEq/L."
+
+  - id: SSRI_MAOI
+    description: "SSRI + MAOI — serotonin syndrome"
+    severity: critical
+    drug_a: ["fluoxetine", "sertraline", "paroxetine", "citalopram", "escitalopram", "fluvoxamine"]
+    drug_b: ["phenelzine", "tranylcypromine", "isocarboxazid", "selegiline", "rasagiline"]
+    effect: "Serotonin syndrome — potentially fatal (hyperthermia, rigidity, myoclonus, autonomic instability)"
+    recommendation: "ABSOLUTE contraindication. Must have 2-5 week washout between agents."
+
+  - id: SSRI_TRAMADOL
+    description: "SSRI + tramadol — serotonin syndrome risk"
+    severity: warning
+    drug_a: ["fluoxetine", "sertraline", "paroxetine", "citalopram", "escitalopram"]
+    drug_b: ["tramadol"]
+    effect: "Increased risk of serotonin syndrome and seizures"
+    recommendation: "Use alternative analgesic. If unavoidable, monitor closely for serotonin syndrome symptoms."
+
+  - id: METFORMIN_CONTRAST
+    description: "Metformin + iodinated contrast — lactic acidosis risk"
+    severity: warning
+    drug_a: ["metformin"]
+    drug_b: ["iodinated contrast", "contrast dye", "IV contrast"]
+    effect: "Risk of metformin-associated lactic acidosis in setting of contrast-induced nephropathy"
+    recommendation: "Hold metformin 48 hours before/after contrast. Check creatinine before restarting."
+
+  - id: STATIN_FIBRATE
+    description: "Statin + fibrate — increased myopathy/rhabdomyolysis risk"
+    severity: warning
+    drug_a: ["simvastatin", "atorvastatin", "rosuvastatin", "lovastatin", "pravastatin"]
+    drug_b: ["gemfibrozil", "fenofibrate"]
+    effect: "Increased risk of myopathy and rhabdomyolysis"
+    recommendation: "If combination needed, fenofibrate is preferred over gemfibrozil. Monitor CK levels."
+
+  - id: DIGOXIN_AMIODARONE
+    description: "Digoxin + amiodarone — digoxin toxicity"
+    severity: critical
+    drug_a: ["digoxin"]
+    drug_b: ["amiodarone"]
+    effect: "Amiodarone increases digoxin levels by 70-100%, risk of toxicity"
+    recommendation: "Reduce digoxin dose by 50% when starting amiodarone. Monitor digoxin levels."
+
+  - id: OPIOID_BENZODIAZEPINE
+    description: "Opioid + benzodiazepine — respiratory depression"
+    severity: critical
+    drug_a: ["morphine", "oxycodone", "hydrocodone", "fentanyl", "codeine", "tramadol", "hydromorphone", "methadone"]
+    drug_b: ["diazepam", "lorazepam", "alprazolam", "clonazepam", "midazolam", "temazepam"]
+    effect: "Synergistic CNS depression — risk of respiratory failure and death"
+    recommendation: "Avoid combination if possible. If necessary, use lowest effective doses and monitor closely."
+
+  - id: LITHIUM_NSAID
+    description: "Lithium + NSAID — lithium toxicity"
+    severity: warning
+    drug_a: ["lithium"]
+    drug_b: ["ibuprofen", "naproxen", "diclofenac", "indomethacin", "ketorolac", "meloxicam", "celecoxib"]
+    effect: "NSAIDs reduce renal lithium clearance — risk of lithium toxicity"
+    recommendation: "Monitor lithium levels closely. Use acetaminophen or aspirin (low-dose) for pain."
+
+  - id: QT_PROLONGING_COMBO
+    description: "Multiple QT-prolonging drugs — risk of torsades de pointes"
+    severity: critical
+    drug_a: ["amiodarone", "sotalol", "dofetilide", "dronedarone"]
+    drug_b: ["haloperidol", "ziprasidone", "ondansetron", "ciprofloxacin", "levofloxacin", "azithromycin", "erythromycin", "methadone", "fluconazole"]
+    effect: "Additive QT prolongation — risk of fatal arrhythmia (torsades de pointes)"
+    recommendation: "Avoid combination. If unavoidable, obtain baseline ECG, monitor QTc, keep electrolytes normal."

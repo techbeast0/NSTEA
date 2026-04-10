@@ -1,0 +1,61 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ns-tea"
+version = "0.2.0"
+description = "NS-TEA: Neuro-Symbolic Temporal EHR Agent for Clinical Decision Support"
+requires-python = ">=3.11"
+dependencies = [
+    # Core
+    "pydantic>=2.0",
+    "pydantic-settings>=2.0",
+    
+    # Agent Framework
+    "agno>=2.5",
+    "huggingface_hub>=0.20",
+    
+    # Data
+    "pandas>=2.0",
+    "orjson>=3.9",
+    
+    # Embeddings & Retrieval
+    "sentence-transformers>=2.0",
+    
+    # Frontend (Phase 0-2)
+    "streamlit>=1.30",
+    
+    # API
+    "fastapi>=0.100",
+    "uvicorn>=0.20",
+    
+    # Graph
+    "networkx>=3.0",
+    
+    # Utilities
+    "python-dotenv>=1.0",
+    "structlog>=24.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.4",
+    "mypy>=1.10",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/nstea"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"

@@ -1,0 +1,46 @@
+Drug Safety in Pregnancy
+Source: FDA Pregnancy Categories and ACOG Guidelines (summarized)
+
+CATEGORY X — ABSOLUTELY CONTRAINDICATED
+These drugs cause fetal harm; risk clearly outweighs any benefit:
+- Isotretinoin (Accutane): severe birth defects (craniofacial, cardiac, CNS)
+- Methotrexate: embryotoxic and teratogenic
+- Warfarin: warfarin embryopathy (nasal hypoplasia, stippled epiphyses), CNS defects
+- Statins (all): potential teratogenicity — discontinue before conception
+- Thalidomide: limb defects (phocomelia)
+- Misoprostol: uterine contractions, fetal death
+- Finasteride/Dutasteride: abnormal male fetal genitalia
+- Ribavirin: teratogenic — requires two forms of contraception
+- Leflunomide: teratogenic — requires washout with cholestyramine
+
+CATEGORY D — EVIDENCE OF RISK, use only if benefit outweighs risk
+- ACE inhibitors/ARBs: renal agenesis, oligohydramnios (especially 2nd/3rd trimester)
+- Phenytoin: fetal hydantoin syndrome
+- Valproic acid: neural tube defects, developmental delay
+- Lithium: Ebstein anomaly (low risk), neonatal complications
+- Tetracyclines: tooth discoloration, bone growth inhibition
+- Aminoglycosides: ototoxicity
+
+SAFE IN PREGNANCY (commonly used)
+- Acetaminophen: safe analgesic/antipyretic
+- Penicillins and cephalosporins: safe antibiotics
+- Insulin: safe for glucose control (preferred over oral agents)
+- Labetalol: safe for hypertension
+- Nifedipine: safe for hypertension and tocolysis
+- Methyldopa: safe for hypertension (long track record)
+- Ondansetron: generally considered safe for nausea (limited data)
+- Prenatal vitamins with folic acid: recommended
+
+MEDICATIONS TO AVOID
+- NSAIDs: avoid especially in 3rd trimester (premature closure of ductus arteriosus)
+- Fluoroquinolones: cartilage damage risk
+- Trimethoprim: folate antagonist (avoid in 1st trimester)
+- Live vaccines: contraindicated
+
+TREATMENT ALTERNATIVES
+- Pain: acetaminophen instead of NSAIDs
+- Hypertension: labetalol/nifedipine instead of ACE/ARB
+- Diabetes: insulin instead of metformin/sulfonylureas
+- Anticoagulation: LMWH (enoxaparin) instead of warfarin
+- Acne: topical treatments instead of isotretinoin
+- Depression: sertraline or fluoxetine (SSRIs with most safety data)

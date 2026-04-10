@@ -1,0 +1,34 @@
+Acute Coronary Syndrome (ACS) Management Guidelines
+Source: ACC/AHA 2023 Clinical Practice Guidelines (summarized)
+
+INITIAL ASSESSMENT
+- All patients with suspected ACS should receive a 12-lead ECG within 10 minutes of arrival
+- Troponin levels should be measured at presentation and repeated at 3-6 hours
+- Oxygen therapy if SpO2 < 90%
+
+STEMI MANAGEMENT
+- Emergent reperfusion therapy (PCI preferred, door-to-balloon < 90 minutes)
+- Dual antiplatelet therapy (DAPT): aspirin 325mg loading + P2Y12 inhibitor
+- If aspirin allergy: clopidogrel 600mg loading dose as alternative
+- Anticoagulation: unfractionated heparin or enoxaparin
+- Beta-blocker (oral) within 24 hours if no contraindications
+- ACE inhibitor within 24 hours for anterior STEMI or EF < 40%
+- High-intensity statin therapy
+
+NSTEMI MANAGEMENT
+- Risk stratification using TIMI or GRACE score
+- Antiplatelet: aspirin + P2Y12 inhibitor (ticagrelor preferred)
+- If aspirin allergy: clopidogrel as monotherapy or with ticagrelor
+- Early invasive strategy for high-risk features
+- Anticoagulation during hospitalization
+
+CONTRAINDICATIONS
+- NSAIDs (other than aspirin) are contraindicated in ACS — increase cardiovascular risk
+- Non-selective beta-blockers contraindicated in asthma/severe COPD
+- ACE inhibitors contraindicated in bilateral renal artery stenosis
+- Thrombolytics contraindicated if recent major surgery, active bleeding, or stroke
+
+DRUG ALLERGY CONSIDERATIONS
+- Aspirin-allergic patients: use clopidogrel as antiplatelet alternative
+- Heparin-induced thrombocytopenia: use bivalirudin
+- Statin intolerance: try lower dose or alternative statin; consider ezetimibe

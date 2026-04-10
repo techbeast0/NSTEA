@@ -1,0 +1,20 @@
+# NS-TEA Phase 0 Dependencies
+
+# Core
+pydantic>=2.0
+pydantic-settings>=2.0
+
+# Google ADK
+google-adk>=1.0.0
+google-genai>=1.0.0
+
+# Data
+pandas>=2.0
+orjson>=3.9
+
+# Frontend (Phase 0)
+streamlit>=1.30
+
+# Utilities
+python-dotenv>=1.0
+structlog>=24.0

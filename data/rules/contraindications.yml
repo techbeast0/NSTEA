@@ -1,0 +1,161 @@
+# NS-TEA Contraindication Rules
+# Each rule checks if a proposed medication violates a patient safety constraint.
+
+rules:
+  # === ALLERGY-BASED CONTRAINDICATIONS ===
+
+  - id: ALLERGY_DRUG_MATCH
+    description: "Direct allergy-drug match — never recommend a drug the patient is allergic to"
+    severity: critical
+    type: allergy_match
+    # This rule is evaluated dynamically: for each recommendation,
+    # check if any allergy substance matches the drug name (fuzzy).
+
+  - id: PENICILLIN_CROSS_REACTIVITY
+    description: "Penicillin allergy cross-reactivity with beta-lactams"
+    severity: critical
+    type: cross_reactivity
+    trigger_allergy: ["penicillin", "amoxicillin", "ampicillin"]
+    contraindicated_drugs:
+      - amoxicillin
+      - ampicillin
+      - amoxicillin/clavulanate
+      - augmentin
+      - piperacillin
+      - piperacillin/tazobactam
+      - nafcillin
+      - oxacillin
+      - dicloxacillin
+    # Note: cephalosporins have ~1-2% cross-reactivity, flagged as warning not critical
+    warn_drugs:
+      - cephalexin
+      - ceftriaxone
+      - cefazolin
+      - cefepime
+    message: "Patient has penicillin allergy — beta-lactam antibiotics contraindicated. Consider fluoroquinolones, macrolides, or trimethoprim-sulfamethoxazole."
+
+  - id: SULFA_CROSS_REACTIVITY
+    description: "Sulfonamide allergy cross-reactivity"
+    severity: critical
+    type: cross_reactivity
+    trigger_allergy: ["sulfa", "sulfonamide", "sulfamethoxazole", "sulfasalazine"]
+    contraindicated_drugs:
+      - sulfamethoxazole
+      - trimethoprim-sulfamethoxazole
+      - bactrim
+      - sulfasalazine
+      - sulfadiazine
+      - silver sulfadiazine
+    warn_drugs:
+      - furosemide
+      - thiazide
+      - hydrochlorothiazide
+      - celecoxib
+    message: "Patient has sulfonamide allergy — sulfa-containing drugs contraindicated."
+
+  - id: ASPIRIN_NSAID_CROSS_REACTIVITY
+    description: "Aspirin allergy often cross-reacts with NSAIDs"
+    severity: critical
+    type: cross_reactivity
+    trigger_allergy: ["aspirin", "acetylsalicylic acid"]
+    contraindicated_drugs:
+      - aspirin
+      - ibuprofen
+      - naproxen
+      - diclofenac
+      - indomethacin
+      - ketorolac
+      - meloxicam
+      - piroxicam
+      - celecoxib
+    message: "Patient has aspirin/NSAID allergy — all NSAIDs contraindicated. Use acetaminophen for pain. For antiplatelet, consider clopidogrel."
+
+  # === CONDITION-BASED CONTRAINDICATIONS ===
+
+  - id: PREGNANCY_CATEGORY_X
+    description: "Category X drugs absolutely contraindicated in pregnancy"
+    severity: critical
+    type: condition_drug
+    trigger_condition: ["pregnancy", "pregnant"]
+    contraindicated_drugs:
+      - isotretinoin
+      - accutane
+      - methotrexate
+      - warfarin
+      - simvastatin
+      - atorvastatin
+      - rosuvastatin
+      - lovastatin
+      - thalidomide
+      - finasteride
+      - dutasteride
+      - misoprostol
+      - ribavirin
+      - leflunomide
+    message: "Patient is pregnant — Category X drugs absolutely contraindicated due to teratogenic risk."
+
+  - id: RENAL_IMPAIRMENT_DRUGS
+    description: "Drugs requiring dose adjustment or contraindicated in renal impairment"
+    severity: warning
+    type: condition_drug
+    trigger_condition: ["CKD", "chronic kidney disease", "renal impairment", "renal failure"]
+    contraindicated_drugs:
+      - metformin  # Contraindicated if eGFR < 30
+      - lithium
+      - spironolactone
+    warn_drugs:
+      - gentamicin
+      - vancomycin
+      - digoxin
+      - gabapentin
+      - pregabalin
+      - allopurinol
+    message: "Patient has renal impairment — check eGFR and adjust doses. Some drugs require monitoring or are contraindicated."
+
+  - id: LIVER_IMPAIRMENT_DRUGS
+    description: "Drugs contraindicated or requiring adjustment in hepatic impairment"
+    severity: warning
+    type: condition_drug
+    trigger_condition: ["cirrhosis", "liver failure", "hepatic impairment", "liver disease"]
+    contraindicated_drugs:
+      - acetaminophen  # high doses
+      - methotrexate
+      - statins  # some — depends on severity
+    warn_drugs:
+      - warfarin
+      - benzodiazepines
+      - opioids
+    message: "Patient has hepatic impairment — hepatotoxic drugs require dose adjustment or avoidance."
+
+  - id: HEART_FAILURE_NSAIDS
+    description: "NSAIDs worsen heart failure via fluid retention"
+    severity: critical
+    type: condition_drug
+    trigger_condition: ["heart failure", "CHF", "congestive heart failure", "HFrEF", "HFpEF"]
+    contraindicated_drugs:
+      - ibuprofen
+      - naproxen
+      - diclofenac
+      - indomethacin
+      - ketorolac
+      - meloxicam
+      - celecoxib
+      - piroxicam
+    message: "Patient has heart failure — NSAIDs contraindicated due to fluid retention and worsening cardiac function."
+
+  - id: ASTHMA_BETA_BLOCKERS
+    description: "Non-selective beta-blockers contraindicated in asthma"
+    severity: critical
+    type: condition_drug
+    trigger_condition: ["asthma"]
+    contraindicated_drugs:
+      - propranolol
+      - nadolol
+      - timolol
+      - sotalol
+      - carvedilol
+    warn_drugs:
+      - metoprolol  # cardioselective, use with caution
+      - atenolol
+      - bisoprolol
+    message: "Patient has asthma — non-selective beta-blockers contraindicated (bronchospasm risk)."

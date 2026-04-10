@@ -1,0 +1,72 @@
+# ===========================
+# SECRETS — NEVER COMMIT
+# ===========================
+.env
+*.env
+!.env.example
+
+# ===========================
+# Virtual Environment
+# ===========================
+.final_proj/
+venv/
+.venv/
+env/
+
+# ===========================
+# Python
+# ===========================
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+*.egg
+
+# ===========================
+# Testing / QA
+# ===========================
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+*.cover
+
+# ===========================
+# IDE / Editor
+# ===========================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ===========================
+# OS Artifacts
+# ===========================
+Thumbs.db
+desktop.ini
+.DS_Store
+ehthumbs.db
+
+# ===========================
+# Docker
+# ===========================
+*.log
+
+# ===========================
+# Data — large/generated files
+# ===========================
+data/feedback.json
+data/fhir/
+data/vector_index.pkl
+data/evaluation_results_*.json
+
+# ===========================
+# Large binary / archive files
+# ===========================
+*.zip
+*.tar.gz
+*.7z

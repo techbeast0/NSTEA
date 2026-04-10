@@ -1,0 +1,51 @@
+# Virtual environment
+.final_proj/
+
+# Environment secrets
+.env
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Test / evaluation artifacts
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+*.cover
+.coverage
+
+# Large data — FHIR is 10 GB, not needed in image
+data/fhir/
+data/evaluation_results_*.json
+
+# Logs
+*.log
+
+# Docker (don't send itself)
+Dockerfile
+docker-compose*.yml
+
+# Docs
+README.md
+LICENSE

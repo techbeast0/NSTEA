@@ -1,0 +1,33 @@
+Urinary Tract Infection (UTI) Treatment Guidelines
+Source: IDSA/AUA 2023 Guidelines (summarized)
+
+UNCOMPLICATED UTI (CYSTITIS) IN WOMEN
+First-line agents:
+- Nitrofurantoin monohydrate 100mg BID x 5 days
+- Trimethoprim-sulfamethoxazole (TMP-SMX) 160/800mg BID x 3 days (if local resistance < 20%)
+- Fosfomycin trometamol 3g single dose
+
+Second-line agents (if first-line not suitable):
+- Ciprofloxacin 250mg BID x 3 days
+- Levofloxacin 250mg daily x 3 days
+- Beta-lactams: amoxicillin-clavulanate, cefdinir, cephalexin (less effective)
+
+COMPLICATED UTI / PYELONEPHRITIS
+- Fluoroquinolone (ciprofloxacin or levofloxacin) x 7-14 days
+- TMP-SMX x 14 days (if susceptible)
+- Third-generation cephalosporin (ceftriaxone) IV if hospitalized
+
+ALLERGY CONSIDERATIONS
+- Penicillin allergy: Safe alternatives include nitrofurantoin, TMP-SMX, fluoroquinolones, fosfomycin
+- Sulfa allergy: Avoid TMP-SMX, use nitrofurantoin, fluoroquinolones, fosfomycin, or cephalosporins
+- Fluoroquinolone contraindication (tendon rupture risk): Use nitrofurantoin or cephalosporins
+
+RENAL DOSING
+- Nitrofurantoin: AVOID if CrCl < 30 mL/min (ineffective, risk of toxicity)
+- TMP-SMX: Reduce dose if CrCl 15-30 mL/min; avoid if < 15
+- Fluoroquinolones: Dose adjustment needed for CrCl < 30
+
+SPECIAL POPULATIONS
+- Pregnancy: Nitrofurantoin (avoid near term), cephalexin, amoxicillin (if susceptible)
+- Pregnancy AVOID: Fluoroquinolones, TMP-SMX (first trimester folate antagonism, third trimester kernicterus)
+- Elderly: Prefer nitrofurantoin or TMP-SMX; avoid fluoroquinolones if possible (C. diff risk)

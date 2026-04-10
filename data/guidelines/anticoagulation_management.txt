@@ -1,0 +1,55 @@
+Anticoagulation Therapy Management
+Source: CHEST/ASH 2024 Anticoagulation Guidelines (summarized)
+
+WARFARIN MANAGEMENT
+- Target INR: 2.0-3.0 for most indications (atrial fibrillation, VTE)
+- Target INR: 2.5-3.5 for mechanical heart valves
+- Initial dose: 5mg daily, adjust based on INR response
+- Monitoring: INR every 2-3 days initially, then weekly, then monthly when stable
+- Maximum therapeutic INR range: within 0.5 of target
+
+WARFARIN DRUG INTERACTIONS (CRITICAL)
+These drugs INCREASE warfarin effect (bleeding risk):
+- Antibiotics: metronidazole, fluconazole, TMP-SMX, ciprofloxacin, azithromycin
+- NSAIDs: ibuprofen, naproxen (also increase bleeding via platelet inhibition)
+- Acetaminophen: in doses > 2g/day, increases INR
+- Amiodarone: dramatically increases warfarin levels — reduce warfarin dose 30-50%
+- Omeprazole/esomeprazole: moderate CYP2C19 interaction
+
+These drugs DECREASE warfarin effect:
+- Rifampin: strong CYP inducer — may need 2-3x warfarin dose
+- Carbamazepine, phenytoin, phenobarbital
+- Vitamin K (dietary or supplements)
+
+WARFARIN + NSAID — ABSOLUTE AVOID
+- Combined anticoagulant + antiplatelet effect = dramatically increased GI and intracranial bleeding
+- If analgesia needed: use acetaminophen (< 2g/day)
+- If anti-inflammatory needed: short course with PPI gastroprotection + close INR monitoring
+
+DIRECT ORAL ANTICOAGULANTS (DOAC)
+- Apixaban (Eliquis): 5mg BID (reduce to 2.5mg BID if elderly + low weight + CrCl concern)
+- Rivaroxaban (Xarelto): 20mg daily with food
+- Dabigatran (Pradaxa): 150mg BID (reduce if CrCl 30-50)
+- Edoxaban (Savaysa): 60mg daily (reduce to 30mg if CrCl 15-50 or weight < 60kg)
+
+DOAC ADVANTAGES OVER WARFARIN
+- No routine INR monitoring needed
+- Fewer drug-food interactions
+- Lower intracranial hemorrhage risk
+- Fixed dosing
+
+SWITCHING BETWEEN AGENTS
+- Warfarin to DOAC: Start DOAC when INR < 2.0
+- DOAC to warfarin: Start warfarin, continue DOAC for 3-5 days until INR therapeutic
+- Bridging with LMWH: only for mechanical valves or high-risk situations
+
+CHA2DS2-VASc SCORE (for AF anticoagulation decision)
+- C: CHF (+1)
+- H: Hypertension (+1)
+- A2: Age >= 75 (+2)
+- D: Diabetes (+1)
+- S2: Stroke/TIA history (+2)
+- V: Vascular disease (+1)
+- A: Age 65-74 (+1)
+- Sc: Sex category — female (+1)
+Score >= 2 (men) or >= 3 (women): recommend anticoagulation
