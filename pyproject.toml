@@ -14,6 +14,7 @@ dependencies = [
     
     # Agent Framework
     "agno>=2.5",
+    "ollama>=0.4",
     "huggingface_hub>=0.20",
     
     # Data
