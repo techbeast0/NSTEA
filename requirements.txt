@@ -8,6 +8,7 @@ pydantic-settings>=2.0
 # Agent Framework
 agno>=2.5
 ollama>=0.4
+openai>=1.0
 huggingface_hub>=0.20
 
 # Data
