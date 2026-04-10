@@ -60,13 +60,15 @@ def get_feedback_summary() -> dict:
     if total == 0:
         return {"total": 0, "accept": 0, "modify": 0, "reject": 0, "accept_rate": 0.0}
 
-    verdicts = {"accept": 0, "modify": 0, "reject": 0}
+    verdicts = {"accepted": 0, "modified": 0, "rejected": 0}
+    verdict_map = {"accept": "accepted", "modify": "modified", "reject": "rejected"}
     for r in all_records:
         v = r.get("verdict", "reject")
-        verdicts[v] = verdicts.get(v, 0) + 1
+        key = verdict_map.get(v, v)
+        verdicts[key] = verdicts.get(key, 0) + 1
 
     return {
         "total": total,
         **verdicts,
-        "accept_rate": round(verdicts["accept"] / total, 2),
+        "accept_rate": round(verdicts["accepted"] / total, 2),
     }
