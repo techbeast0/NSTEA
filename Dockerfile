@@ -33,7 +33,8 @@ COPY scripts/ ./scripts/
 ENV PORT=8001
 
 # Non-root user for security
-RUN useradd --create-home appuser
+RUN useradd --create-home appuser && \
+    chown -R appuser:appuser /app/data
 USER appuser
 
 # Expose port
